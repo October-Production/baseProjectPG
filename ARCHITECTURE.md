@@ -240,6 +240,26 @@ this.realtime.onEntity('limit')
 (`Web/Configuration/VaultExtension.cs`, пакет `Util.VaultCoreLib`), учётка для входа в Vault —
 из переменных окружения машины.
 
+Подключение то же, что в BanknoteOps и NBC: один вызов `builder.Configuration.VaultInit()`
+в `Program.cs`, секция `VaultSettings` в `appsettings.json` (`Address`, `MountPath`,
+`MountPathGeneral`, `MountPoint`). Значения из Vault ложатся в ту же конфигурацию,
+поэтому код читает их обычным образом — про Vault он не знает.
+
+**Смена значений на ходу.** `VaultInit` включает `reloadOnChange` и запускает
+`VaultChangeWatcher`: если в Vault поменяли значение, конфигурация перечитывается сама.
+Но этого мало — перечитанное значение должен ещё кто-то заново прочитать. В BanknoteOps
+строка подключения читается один раз при старте, и после ротации пароля приложение
+продолжает ходить со старым до перезапуска.
+
+Здесь строку подключения подхватывает `PgDataSource`: на каждом обращении он сверяет текущую
+строку с той, на которой построен пул, и при расхождении строит новый пул. Старый не
+закрывается сразу — на нём могут доигрывать начатые запросы, — а через 30 секунд. Поэтому
+репозитории держат `PgDataSource`, а не готовый пул.
+
+Остальные ключи (`Configuration:Log:*`, `WriteLockWaitSeconds`, `Auth:HostNameCacheMinutes`)
+читаются при старте: это настройки работы, а не секреты, и после их смены нужен перезапуск.
+`Auth:AccessCacheSeconds` и `Auth:Dev` подхватываются на ходу.
+
 На машине без внутреннего nuget-фида `Directory.Build.targets` в корне решения снимает
 `PackageReference`, исключает `VaultExtension.cs` и подставляет заглушку из `local-debug/`.
 Внутри проекта `TreasuryPortal.Web` при этом ничего не меняется, поэтому обновление с сервера

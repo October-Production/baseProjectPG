@@ -16,9 +16,14 @@ namespace TreasuryPortal.DbCore.Repositories.Abstract;
 /// параметрами jsonb и возвращает одно значение json. Никаких наборов строк, XML и построителей
 /// документа — поэтому слой заметно короче версии под MS SQL.
 /// </summary>
-internal abstract class PgRepositoryCore(NpgsqlDataSource dataSource, ISystemLog log)
+internal abstract class PgRepositoryCore(PgDataSource dataSource, ISystemLog log)
 {
-    private protected readonly NpgsqlDataSource DataSource = dataSource;
+    /// <summary>
+    /// Источник подключений, а не готовый пул: строку подключения приносит Vault и может
+    /// поменять её на ходу, поэтому актуальный пул спрашивается на каждой операции.
+    /// </summary>
+    private protected readonly PgDataSource DataSource = dataSource;
+
     private protected readonly ISystemLog Log = log;
 
     #region Ошибки
@@ -116,7 +121,7 @@ internal abstract class PgRepositoryCore(NpgsqlDataSource dataSource, ISystemLog
         Func<NpgsqlDataReader, CancellationToken, Task<JsonElement>> readData,
         CancellationToken cancellationToken)
     {
-        await using var command = DataSource.CreateCommand(
+        await using var command = DataSource.Primary.CreateCommand(
             $"select {PgSchema.Name}.{function}(@user_data, @request);");
 
         command.Parameters.AddWithValue("@user_data", NpgsqlDbType.Jsonb, user.ToJsonString());

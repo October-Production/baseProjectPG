@@ -12,7 +12,7 @@ namespace TreasuryPortal.DbCore.Repositories;
 /// называет функцию и передаёт запрос; вызов, журнал и разбор ответа берёт на себя
 /// <see cref="EntityRepositoryCore"/>.
 /// </remarks>
-internal sealed class DictionaryRepository(NpgsqlDataSource dataSource, ISystemLog log)
+internal sealed class DictionaryRepository(PgDataSource dataSource, ISystemLog log)
     : EntityRepositoryCore(dataSource, log, "dictionary"), IDictionaryRepository
 {
     public Task<JsonElement> GetListAsync(

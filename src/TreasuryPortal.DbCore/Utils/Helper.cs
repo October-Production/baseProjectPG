@@ -46,7 +46,12 @@ public static class Helper
                 return (text, pg.Detail, 400);
 
             case NpgsqlException npgsql:
-                return ($"{npgsql.GetType().Name}: {npgsql.Message}", null, 503);
+                // Multi-host пул отвечает общим «Unable to connect to a suitable host», а настоящая
+                // причина — какой хост и почему не ответил — лежит во вложенном исключении.
+                // Без неё после ротации строки в Vault не понять, что именно не так.
+                return npgsql.InnerException is { } inner
+                    ? ($"{npgsql.GetType().Name}: {npgsql.Message} {inner.Message}", null, 503)
+                    : ($"{npgsql.GetType().Name}: {npgsql.Message}", null, 503);
 
             case MessageException message:
                 return (message.Message, null, message.StatusCode);

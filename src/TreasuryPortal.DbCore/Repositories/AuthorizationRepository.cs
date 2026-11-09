@@ -16,7 +16,7 @@ namespace TreasuryPortal.DbCore.Repositories;
 /// (Web/Auth/UserDirectory) должна отличить «прав нет» от «база недоступна» — иначе
 /// одна заминка тихо оставила бы всех без доступа на время жизни кэша.
 /// </summary>
-internal sealed class AuthorizationRepository(NpgsqlDataSource dataSource, ISystemLog log)
+internal sealed class AuthorizationRepository(PgDataSource dataSource, ISystemLog log)
     : PgRepositoryCore(dataSource, log), IAuthorizationRepository
 {
     public Task<List<string>> GetRolesAsync(IUserCredential user, CancellationToken cancellationToken = default) =>
@@ -44,7 +44,7 @@ internal sealed class AuthorizationRepository(NpgsqlDataSource dataSource, ISyst
         using var logged = Log.Start(user, entity, "list");
         try
         {
-            await using var command = DataSource.CreateCommand($"select {PgSchema.Name}.{function}(@usr);");
+            await using var command = DataSource.Primary.CreateCommand($"select {PgSchema.Name}.{function}(@usr);");
             command.Parameters.AddWithValue("@usr", NpgsqlDbType.Jsonb, user.ToJsonString());
 
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);

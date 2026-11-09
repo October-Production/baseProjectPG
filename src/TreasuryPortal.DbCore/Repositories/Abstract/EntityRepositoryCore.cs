@@ -16,7 +16,7 @@ namespace TreasuryPortal.DbCore.Repositories.Abstract;
 /// Новая сущность = интерфейс в Repositories/Abstract + класс здесь рядом + свойство в
 /// <see cref="UOW.Abstract.ITreasuryUow"/>. Больше ничего в слое данных трогать не нужно.
 /// </summary>
-internal abstract class EntityRepositoryCore(NpgsqlDataSource dataSource, ISystemLog log, string entity)
+internal abstract class EntityRepositoryCore(PgDataSource dataSource, ISystemLog log, string entity)
     : PgRepositoryCore(dataSource, log)
 {
     /// <summary>Имя сущности в журнале и префикс имён функций.</summary>
