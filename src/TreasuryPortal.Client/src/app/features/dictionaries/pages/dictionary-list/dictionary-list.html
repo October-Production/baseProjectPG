@@ -1,0 +1,70 @@
+<div class="tp-page">
+  <tp-page-header title="Довідники" subtitle="Значення, з яких складаються картки порталу" />
+
+  <div class="tp-toolbar-row">
+    <mat-form-field class="picker">
+      <mat-label>Довідник</mat-label>
+      <mat-select [ngModel]="selected()" (ngModelChange)="selected.set($event)">
+        @for (option of available; track option.value) {
+          <mat-option [value]="option.value">{{ option.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="search">
+      <mat-label>Пошук</mat-label>
+      <input
+        matInput
+        type="search"
+        autocomplete="off"
+        [ngModel]="list.searchText()"
+        (ngModelChange)="list.searchText.set($event)"
+      />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <span class="tp-spacer"></span>
+    <span class="tp-muted">Записів: {{ list.filtered().length }}</span>
+  </div>
+
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <div class="tp-table-wrap">
+    <table mat-table matSort class="tp-table" [dataSource]="list.datasource">
+      <ng-container matColumnDef="code">
+        <th mat-header-cell mat-sort-header *matHeaderCellDef>Код</th>
+        <td mat-cell *matCellDef="let row">{{ row.code }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell mat-sort-header *matHeaderCellDef>Назва</th>
+        <td mat-cell class="tp-wrap" *matCellDef="let row">{{ row.name }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="dateFrom">
+        <th mat-header-cell mat-sort-header *matHeaderCellDef>Діє з</th>
+        <td mat-cell *matCellDef="let row">{{ row.dateFrom | appDate }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="dateTo">
+        <th mat-header-cell mat-sort-header *matHeaderCellDef>Діє по</th>
+        <td mat-cell *matCellDef="let row">{{ row.dateTo | appDate }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+    </table>
+
+    @if (!isLoading() && list.isEmpty()) {
+      @if (hasError()) {
+        <tp-empty-state icon="cloud_off" message="Не вдалося завантажити довідник" />
+      } @else {
+        <tp-empty-state message="У довіднику немає записів" />
+      }
+    }
+  </div>
+
+  <mat-paginator showFirstLastButtons (page)="list.onPage($event)" />
+</div>

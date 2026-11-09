@@ -1,0 +1,105 @@
+// Тема Angular Material для Treasury Portal — Sense Bank.
+//
+// Палитра в _sense-palette.scss сгенерирована схематикой Material 3 из фирменного синего
+// Sense Bank #2722FF (точный цвет логотипа), поддерживающего серо-синего, зелёного для
+// «в плюс» и банковского красного для ошибок и «в минус».
+//
+// Плотность -2 выбрана осознанно: казначеи смотрят не на карточки, а на таблицы с десятками
+// строк — курсы, лимиты, платежи. При плотности 0 на экран помещается на треть меньше строк.
+// Если какой-то экран должен быть просторнее, ставьте на нём локально mat.<component>-density(0).
+//
+// Светлая и тёмная схемы: Material пишет значения через light-dark(), переключение —
+// атрибутом data-theme на <html> (им управляет core/theme/theme.service.ts).
+@use '@angular/material' as mat;
+@use './sense-palette' as sense;
+
+$tp-font:
+  Roboto,
+  'Segoe UI',
+  system-ui,
+  -apple-system,
+  'Helvetica Neue',
+  Arial,
+  sans-serif;
+
+html {
+  height: 100%;
+  // По умолчанию обе схемы: конкретную выбирает data-theme ниже
+  color-scheme: light dark;
+
+  @include mat.theme(
+    (
+      color: (
+        primary: sense.$primary-palette,
+        tertiary: sense.$tertiary-palette,
+      ),
+      typography: (
+        plain-family: $tp-font,
+        brand-family: $tp-font,
+        bold-weight: 700,
+        medium-weight: 500,
+        regular-weight: 400,
+      ),
+      density: -2,
+    )
+  );
+
+  // --- Фирменные цвета Sense Bank ---------------------------------------------------------
+  // Тон 40 палитры чуть светлее логотипа, поэтому основной цвет закрепляем точным значением.
+  // В тёмной схеме тот же синий на тёмном фоне не читается — берём тон 80.
+  --mat-sys-primary: light-dark(#2722ff, #c0c1ff);
+  --mat-sys-on-primary: light-dark(#ffffff, #0b00aa);
+
+  // Фирменный синий как есть — для логотипа, акцентов и графиков
+  --tp-brand: #2722ff;
+  --tp-brand-contrast: #ffffff;
+
+  // Суммы и статусы. Казначей читает знак числа раньше, чем само число.
+  --tp-positive: light-dark(#00704f, #58dcae);
+  --tp-negative: light-dark(#c62828, #ff8a80);
+  --tp-warning: light-dark(#a35a00, #ffc46b);
+  --tp-neutral: var(--mat-sys-on-surface-variant);
+
+  // --- Форма ------------------------------------------------------------------------------
+  // Material 3 скругляет кнопки целиком, и это читается как «это Material» громче любого цвета.
+  // Банковский интерфейс сдержаннее: умеренный радиус, тот же, что у карточек Sense.
+  --mat-sys-corner-extra-small: 4px;
+  --mat-sys-corner-small: 6px;
+  --mat-sys-corner-medium: 8px;
+  --mat-sys-corner-large: 12px;
+  --mat-sys-corner-extra-large: 16px;
+
+  // --- Таблицы ----------------------------------------------------------------------------
+  // Шапка заметнее тела: в длинной таблице глаз должен цепляться за неё при прокрутке.
+  --mat-table-header-container-background-color: var(--mat-sys-surface-container-high);
+  --mat-table-header-headline-color: var(--mat-sys-on-surface-variant);
+  --mat-table-header-headline-weight: 600;
+  --mat-table-row-item-outline-color: var(--mat-sys-outline-variant);
+
+  // --- Размеры каркаса --------------------------------------------------------------------
+  --tp-toolbar-height: 56px;
+  --tp-sidenav-width: 248px;
+  --tp-sidenav-width-collapsed: 64px;
+  --tp-page-max-width: 1600px;
+  --tp-gap: 16px;
+}
+
+// Переключение схемы: ставит ThemeService, читает prefers-color-scheme при первом запуске
+html[data-theme='light'] {
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--mat-sys-surface-container-low);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+  // Цифры одинаковой ширины: в столбце сумм разряды должны стоять друг под другом
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}

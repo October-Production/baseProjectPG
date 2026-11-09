@@ -1,0 +1,78 @@
+<mat-toolbar class="tp-topbar">
+  <button
+    matIconButton
+    type="button"
+    [attr.aria-label]="collapsed() ? 'Розгорнути меню' : 'Згорнути меню'"
+    (click)="toggleSidenav()"
+  >
+    <mat-icon>menu</mat-icon>
+  </button>
+
+  <a class="brand" routerLink="/">
+    <img src="assets/img/sense-logo.png" alt="Sense Bank" />
+    <span>Treasury Portal</span>
+  </a>
+
+  <span class="tp-spacer"></span>
+
+  @if (user()?.devAccess) {
+    <span class="dev-badge" matTooltip="Ролі та права підмінені секцією Auth:Dev">DEV</span>
+  }
+
+  <span
+    class="link-state"
+    [class]="'is-' + realtimeStatus()"
+    [matTooltip]="realtimeHint()"
+    [attr.aria-label]="realtimeHint()"
+  ></span>
+
+  <button
+    matIconButton
+    type="button"
+    [matTooltip]="theme() === 'dark' ? 'Світла тема' : 'Темна тема'"
+    (click)="toggleTheme()"
+  >
+    <mat-icon>{{ theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+  </button>
+
+  <button matIconButton type="button" [matMenuTriggerFor]="userMenu" aria-label="Користувач">
+    <mat-icon>account_circle</mat-icon>
+  </button>
+
+  <mat-menu #userMenu="matMenu">
+    <div class="user-card" (click)="$event.stopPropagation()">
+      <div class="name">{{ displayName() }}</div>
+      <div class="tp-muted">{{ user()?.name }}</div>
+      <mat-divider />
+      <div class="tp-muted roles">
+        {{ user()?.roles?.length ? user()?.roles?.join(', ') : 'Ролей не призначено' }}
+      </div>
+      <div class="tp-muted">Вхід: {{ user()?.authenticationType || '—' }}</div>
+    </div>
+  </mat-menu>
+</mat-toolbar>
+
+<mat-sidenav-container class="tp-shell" [class.collapsed]="collapsed()">
+  <mat-sidenav mode="side" opened disableClose class="tp-sidenav">
+    <mat-nav-list>
+      @for (item of items(); track item.path) {
+        <a
+          mat-list-item
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          [matTooltip]="collapsed() ? item.title : ''"
+          matTooltipPosition="right"
+        >
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          @if (!collapsed()) {
+            <span matListItemTitle>{{ item.title }}</span>
+          }
+        </a>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <router-outlet />
+  </mat-sidenav-content>
+</mat-sidenav-container>

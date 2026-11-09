@@ -1,0 +1,29 @@
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--tp-gap);
+}
+
+dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+  margin: 0;
+}
+
+dt {
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}
+
+dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.dev-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}

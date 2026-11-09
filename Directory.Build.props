@@ -1,0 +1,16 @@
+<Project>
+
+  <!-- Общее для всех C#-проектов решения: версия рантайма, nullable, предупреждения как ошибки в Release. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <TreatWarningsAsErrors Condition="'$(Configuration)' == 'Release'">true</TreatWarningsAsErrors>
+    <Product>Treasury Portal</Product>
+    <Company>Sense Bank</Company>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+</Project>

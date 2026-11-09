@@ -1,0 +1,80 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using TreasuryPortal.DbCore;
+using TreasuryPortal.Web.Auth;
+using TreasuryPortal.Web.Configuration;
+using TreasuryPortal.Web.Http;
+using TreasuryPortal.Web.Hubs;
+using TreasuryPortal.Web.Spa;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Локальные секреты вне репозитория: на сервере этого файла нет, его место занимает Vault
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+builder.Configuration.VaultInit();
+
+// Слой данных: репозитории, системный журнал и его фоновая запись
+builder.Services.AddDbCore(builder.Configuration);
+
+// Доменная аутентификация, веб-роли и права из базы
+builder.Services.AddTreasuryAuthentication(builder.Configuration);
+
+// Связь с браузером в реальном времени: хаб SignalR и публикация сообщений
+builder.Services.AddTreasuryRealtime();
+
+// Перечисления ездят строками ("warning"), а не числами: так их читает TypeScript.
+// Настроить надо оба конвейера — у контроллеров свои параметры сериализации, у минимальных
+// эндпоинтов (/health, ответы обработчика ошибок) свои, и общими они не становятся.
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(StringEnums()));
+
+builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(StringEnums()));
+
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddHealthChecks();
+builder.Services.AddOpenApi();
+builder.AddSpaHosting();
+
+var app = builder.Build();
+
+app.UseExceptionHandler();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
+app.UseStatusCodePages();
+app.UseHttpsRedirection();
+app.UseSecurityHeaders();
+app.UseApiProtection();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Балансеру и мониторингу Windows-аутентификация недоступна
+app.MapHealthChecks("/health").AllowAnonymous();
+
+// ТОЛЬКО ДЛЯ ОТЛАДКИ: описание API по адресу /openapi/v1.json. На сервере не публикуется
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
+
+// --- Эндпоинты ---------------------------------------------------------------------------
+// Новая сущность добавляется одним контроллером в Controllers/ — регистрировать его здесь
+// не нужно, MapControllers находит его сам
+app.MapControllers();
+
+// Хаб лежит вне /api, поэтому регистрируется отдельно
+app.MapTreasuryHubs();
+
+// Неизвестный адрес API — 404, а не index.html из SPA-fallback
+app.Map("/api/{**path}", () => TypedResults.NotFound());
+
+app.MapSpa();
+
+app.Run();
+
+static JsonStringEnumConverter StringEnums() => new(JsonNamingPolicy.CamelCase);

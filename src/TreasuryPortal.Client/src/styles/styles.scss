@@ -1,0 +1,188 @@
+// Глобальные стили портала.
+//
+// Здесь только то, что нужно всем экранам: каркас страницы, плотные таблицы, сетка формы и
+// несколько утилит. Цвета и размеры берутся из токенов темы (styles/theme.scss) — хардкода нет,
+// иначе тёмная схема разъедется.
+//
+// Правило: стиль, который нужен одному экрану, живёт в его .scss, а не здесь.
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+a {
+  color: var(--mat-sys-primary);
+}
+
+// Экран, который видно, пока приложение грузится (разметка в index.html)
+.tp-boot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 22vh;
+  color: #5a6478;
+  font:
+    14px/1.4 Roboto,
+    'Segoe UI',
+    system-ui,
+    sans-serif;
+
+  img {
+    width: 180px;
+  }
+}
+
+// --- Каркас страницы -------------------------------------------------------------------------
+
+.tp-page {
+  max-width: var(--tp-page-max-width);
+  margin: 0 auto;
+  padding: var(--tp-gap);
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-gap);
+}
+
+/** Полоса над содержимым: заголовок слева, кнопки и поиск справа. */
+.tp-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.tp-spacer {
+  flex: 1 1 auto;
+}
+
+.tp-card {
+  padding: var(--tp-gap);
+  background: var(--mat-sys-surface);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+}
+
+// --- Таблицы ---------------------------------------------------------------------------------
+
+/**
+ * Обёртка списка: горизонтальная прокрутка для широких таблиц и липкая шапка.
+ * Высота считается от экрана, чтобы прокручивалась таблица, а не вся страница —
+ * тогда шапка и пагинатор всегда на виду.
+ */
+.tp-table-wrap {
+  overflow: auto;
+  max-height: calc(100vh - 260px);
+  background: var(--mat-sys-surface);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+}
+
+.tp-table {
+  width: 100%;
+
+  th.mat-mdc-header-cell,
+  td.mat-mdc-cell {
+    padding: 0 10px;
+    white-space: nowrap;
+  }
+
+  // Длинный текст переносится только там, где это разрешили явно
+  .tp-wrap {
+    white-space: normal;
+  }
+}
+
+/** Числовая колонка: вправо и моноширинными цифрами. */
+.tp-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tp-amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+
+  &--positive {
+    color: var(--tp-positive);
+  }
+
+  &--negative {
+    color: var(--tp-negative);
+  }
+}
+
+/** Строка, по которой можно кликнуть, чтобы открыть карточку. */
+.tp-row-link {
+  cursor: pointer;
+
+  &:hover {
+    background: var(--mat-sys-surface-container);
+  }
+}
+
+// --- Формы -----------------------------------------------------------------------------------
+
+/**
+ * Сетка карточки: поля сами укладываются в колонки по ширине экрана.
+ * Полю можно задать ширину в колонках классом tp-col-2 / tp-col-3.
+ */
+.tp-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 4px 16px;
+  align-items: start;
+}
+
+.tp-col-2 {
+  grid-column: span 2;
+}
+
+.tp-col-3 {
+  grid-column: span 3;
+}
+
+.tp-col-full {
+  grid-column: 1 / -1;
+}
+
+// --- Утилиты ---------------------------------------------------------------------------------
+
+.tp-muted {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.tp-error {
+  color: var(--mat-sys-error);
+}
+
+.tp-nowrap {
+  white-space: nowrap;
+}
+
+.tp-mono {
+  font-family: 'Cascadia Mono', Consolas, 'Courier New', monospace;
+}
+
+/** Текст, который не должен вылезать за колонку. */
+.tp-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Диалоги: текст сообщения с переносами по \n
+.tp-dialog-message {
+  margin: 0;
+  white-space: pre-line;
+}
+
+// --- Прокрутка -------------------------------------------------------------------------------
+// Таблиц на экране много, и системная полоса в тёмной схеме выглядит инородно
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--mat-sys-outline) transparent;
+}

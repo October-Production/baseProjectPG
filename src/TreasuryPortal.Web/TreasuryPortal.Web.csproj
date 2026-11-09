@@ -1,0 +1,66 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>TreasuryPortal.Web</RootNamespace>
+    <AssemblyName>TreasuryPortal.Web</AssemblyName>
+    <!-- Angular-клиент: при publish собирается в prod-режиме и кладётся в wwwroot -->
+    <SpaRoot>..\TreasuryPortal.Client\</SpaRoot>
+    <!-- dotnet publish -p:BuildSpa=false — если CI собирает клиент отдельным шагом и сам кладёт dist в wwwroot -->
+    <BuildSpa Condition="'$(BuildSpa)' == ''">true</BuildSpa>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="10.0.14" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
+    <!-- Только для Development: всё, что не API и не хаб, проксируется на ng serve (Spa/SpaHosting.cs) -->
+    <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="10.0.14" />
+    <!-- Внутренний пакет банка. Локально снимается в Directory.Build.targets вместе с Configuration/VaultExtension.cs -->
+    <PackageReference Include="Util.VaultCoreLib" Version="1.10.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TreasuryPortal.DbCore\TreasuryPortal.DbCore.csproj" />
+    <!--
+      Ссылка на клиент нужна Visual Studio: без неё обозреватель решений не связывает проекты,
+      а профиль запуска не поднимает клиент. Выхода сборки у esproj нет (ReferenceOutputAssembly),
+      клиент по-прежнему собирают цели EnsureSpaDependencies и PublishSpa ниже.
+    -->
+    <ProjectReference Include="..\TreasuryPortal.Client\TreasuryPortal.Client.esproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Dev-настройки на сервер не уезжают: в них лежит подмена ролей и прав (Auth:Dev) -->
+    <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+    <!-- Локальные секреты вместо Vault: в репозиторий не попадает и в публикацию тоже -->
+    <Content Update="appsettings.Local.json" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
+  <!-- Первая Debug-сборка: ставим npm-зависимости клиента, чтобы ng serve поднялся с первого F5 -->
+  <Target Name="EnsureSpaDependencies" BeforeTargets="Build"
+          Condition="'$(Configuration)' == 'Debug' And Exists('$(SpaRoot)package.json') And !Exists('$(SpaRoot)node_modules')">
+    <Exec Command="node --version" ContinueOnError="true" StandardOutputImportance="low">
+      <Output TaskParameter="ExitCode" PropertyName="NodeExitCode" />
+    </Exec>
+    <Error Condition="'$(NodeExitCode)' != '0'" Text="Для сборки и запуска клиента нужен Node.js: https://nodejs.org" />
+    <Message Importance="high" Text="Ставлю npm-пакеты клиента (только при первой сборке)..." />
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
+  </Target>
+
+  <!-- publish: свежая prod-сборка клиента, её файлы — в wwwroot публикации -->
+  <Target Name="PublishSpa" AfterTargets="ComputeFilesToPublish" Condition="'$(BuildSpa)' == 'true'">
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm ci" />
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" />
+    <ItemGroup>
+      <SpaDistFiles Include="$(SpaRoot)dist\**" />
+      <ResolvedFileToPublish Include="@(SpaDistFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
+        <RelativePath>wwwroot\%(RecursiveDir)%(FileName)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
+</Project>

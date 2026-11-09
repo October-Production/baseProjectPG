@@ -1,0 +1,23 @@
+# --- .NET ---
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+publish/
+*.user
+*.suo
+.vs/
+TestResults/
+
+# --- Node / Angular ---
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+
+# --- Локальное ---
+# Подменённая личность для AdHelper в Debug (DbCore/Utils/AdHelper.cs)
+user_stub.json
+# Локальные секреты вместо Vault: appsettings.Local.json не уходит в репозиторий
+appsettings.Local.json
+*.log

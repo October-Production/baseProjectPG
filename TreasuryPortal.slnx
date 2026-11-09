@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/solution items/">
+    <File Path="ARCHITECTURE.md" />
+    <File Path="README.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="global.json" />
+  </Folder>
+  <Project Path="src/TreasuryPortal.DbCore/TreasuryPortal.DbCore.csproj" />
+  <Project Path="src/TreasuryPortal.Web/TreasuryPortal.Web.csproj" />
+  <Project Path="src/TreasuryPortal.Client/TreasuryPortal.Client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+</Solution>

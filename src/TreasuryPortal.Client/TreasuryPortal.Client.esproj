@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.5984942">
+  <PropertyGroup>
+    <!-- Что Visual Studio запускает для этого проекта -->
+    <StartupCommand>npm start</StartupCommand>
+    <JavaScriptTestFramework>Jasmine</JavaScriptTestFramework>
+    <!--
+      Сборку клиента ведёт TreasuryPortal.Web (цели EnsureSpaDependencies и PublishSpa),
+      поэтому сам esproj ничего не собирает — иначе клиент собирался бы дважды.
+      Проект нужен ровно затем, чтобы Visual Studio видела клиент в обозревателе решений,
+      умела его запускать и не считала папку чужой.
+    -->
+    <ShouldRunBuildScript>false</ShouldRunBuildScript>
+    <!-- Куда ng build кладёт результат (см. outputPath в angular.json) -->
+    <BuildOutputFolder>$(MSBuildProjectDirectory)\dist\</BuildOutputFolder>
+  </PropertyGroup>
+</Project>

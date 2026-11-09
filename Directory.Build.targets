@@ -1,0 +1,30 @@
+<Project>
+
+  <!--
+    ТОЛЬКО ДЛЯ ОТЛАДКИ — на сервере этого файла быть не должно.
+
+    Util.VaultCoreLib — внутренний пакет банка. Если фид с ним на машине не настроен, restore
+    падает и приложение не стартует. Здесь пакет снимается, настоящий Configuration/VaultExtension.cs
+    исключается из компиляции, а вместо него подставляется заглушка из local-debug/.
+
+    Файл импортируется после каждого .csproj — только так можно убрать PackageReference. Лежит он
+    в корне решения, а не внутри TreasuryPortal.Web, поэтому обновление проекта с сервера его не трогает.
+
+    Чтобы вернуть настоящий Vault: удалите этот файл и папку local-debug/.
+  -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'TreasuryPortal.Web' And '$(UseVault)' != 'true'">
+    <!--
+      Заглушка подставляется только в Debug или когда её попросили явно (-p:UseVault=false).
+      Release без фида падает на restore — и это правильно: опубликовать сборку, в которой
+      Vault ничего не делает, страшнее, чем увидеть ошибку восстановления пакета.
+    -->
+    <UseVaultStub Condition="'$(Configuration)' == 'Debug' Or '$(UseVault)' == 'false'">true</UseVaultStub>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(UseVaultStub)' == 'true'">
+    <PackageReference Remove="Util.VaultCoreLib" />
+    <Compile Remove="Configuration\VaultExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)local-debug\VaultInit.Stub.cs" />
+  </ItemGroup>
+
+</Project>
