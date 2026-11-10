@@ -245,6 +245,31 @@ this.realtime.onEntity('limit')
 `MountPathGeneral`, `MountPoint`). Значения из Vault ложатся в ту же конфигурацию,
 поэтому код читает их обычным образом — про Vault он не знает.
 
+**Как код получает настройки — цепочка та же, что в BanknoteOps:**
+
+```
+Program.cs:  VaultInit()  ──►  SettingsHolder (singleton)  ──►  ControllerCore.Settings
+                                     │
+                                SettingsStore — типизированные свойства
+```
+
+| BanknoteOps | Treasury Portal |
+|---|---|
+| `Utils/Abstract/ISettingsHolder`, `ISettingsStore` | `Configuration/Abstract/ISettingsHolder`, `ISettingsStore` |
+| `Utils/SettingsHolder`, `SettingsStore` | `Configuration/SettingsHolder`, `SettingsStore` |
+| `AddSingleton<ISettingsHolder, SettingsHolder>()` после `VaultInit()` | так же, там же |
+| `ControllerCore._settings` | `ControllerCore.Settings` |
+| `IUOWHolder.unit` | `ITreasuryUow` приходит в контроллер напрямую из DI |
+
+Одно отличие: в BanknoteOps свойства `SettingsStore` объявлены `init` и снимаются один раз
+при старте. Здесь они читаются из конфигурации в момент обращения — иначе новое значение
+из Vault до кода не доходило бы до перезапуска.
+
+Новая настройка интеграции (почтовый сервис, лимиты файлов, AD-группы согласующих)
+добавляется одним свойством в `ISettingsStore` и одной строкой в `SettingsStore` — пример
+закомментирован прямо там. Инфраструктура (`DbCore`, аутентификация) читает свои ключи
+через Options; ключи у них общие с `SettingsStore`, так что значение у ключа всегда одно.
+
 **Смена значений на ходу.** `VaultInit` включает `reloadOnChange` и запускает
 `VaultChangeWatcher`: если в Vault поменяли значение, конфигурация перечитывается сама.
 Но этого мало — перечитанное значение должен ещё кто-то заново прочитать. В BanknoteOps

@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using TreasuryPortal.DbCore;
 using TreasuryPortal.Web.Auth;
 using TreasuryPortal.Web.Configuration;
+using TreasuryPortal.Web.Configuration.Abstract;
 using TreasuryPortal.Web.Http;
 using TreasuryPortal.Web.Hubs;
 using TreasuryPortal.Web.Spa;
@@ -11,7 +12,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Локальные секреты вне репозитория: на сервере этого файла нет, его место занимает Vault
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+
+// Как в BanknoteOps: Vault подмешивает значения в конфигурацию, а SettingsHolder отдаёт их
+// коду типизированными. Контроллеры получают их через ControllerCore.Settings
 builder.Configuration.VaultInit();
+builder.Services.AddSingleton<ISettingsHolder, SettingsHolder>();
 
 // Слой данных: репозитории, системный журнал и его фоновая запись
 builder.Services.AddDbCore(builder.Configuration);

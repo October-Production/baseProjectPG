@@ -4,13 +4,14 @@ using Microsoft.AspNetCore.Mvc;
 using TreasuryPortal.DbCore.Models.Abstract;
 using TreasuryPortal.DbCore.UOW.Abstract;
 using TreasuryPortal.Web.Auth;
+using TreasuryPortal.Web.Configuration.Abstract;
 using TreasuryPortal.Web.Controllers.Base;
 
 namespace TreasuryPortal.Web.Controllers;
 
 [Route("api/auth")]
-public sealed class AuthenticationController(ITreasuryUow uow, CurrentUser currentUser)
-    : ControllerCore(uow, currentUser)
+public sealed class AuthenticationController(ITreasuryUow uow, ISettingsHolder settings, CurrentUser currentUser)
+    : ControllerCore(uow, settings, currentUser)
 {
     /// <summary>
     /// GET api/auth/me — кто вошёл, какие у него роли и права.

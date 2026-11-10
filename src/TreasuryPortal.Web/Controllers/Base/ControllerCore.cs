@@ -3,21 +3,31 @@ using Microsoft.AspNetCore.Mvc;
 using TreasuryPortal.DbCore.Models.Abstract;
 using TreasuryPortal.DbCore.UOW.Abstract;
 using TreasuryPortal.Web.Auth;
+using TreasuryPortal.Web.Configuration.Abstract;
 
 namespace TreasuryPortal.Web.Controllers.Base;
 
 /// <summary>
-/// Что нужно каждому контроллеру: единая точка входа в данные и учётные данные текущего
-/// пользователя. Контроллер никогда не собирает строку подключения и не создаёт репозиторий сам.
+/// Что нужно каждому контроллеру: единая точка входа в данные, настройки и учётные данные
+/// текущего пользователя — то же, что _uow, _settings и GetUserCredentials() в ControllerCore
+/// из BanknoteOps. Контроллер никогда не собирает строку подключения и не создаёт
+/// репозиторий сам.
 ///
 /// Новая сущность = контроллер отсюда + репозиторий в DbCore. Больше ничего в каркасе
 /// трогать не нужно.
 /// </summary>
 [ApiController]
-public abstract class ControllerCore(ITreasuryUow uow, CurrentUser currentUser) : ControllerBase
+public abstract class ControllerCore(ITreasuryUow uow, ISettingsHolder settings, CurrentUser currentUser)
+    : ControllerBase
 {
     /// <summary>Единая точка входа в репозитории.</summary>
     private protected ITreasuryUow Uow { get; } = uow;
+
+    /// <summary>
+    /// Настройки приложения, в том числе пришедшие из Vault. Значения читаются в момент
+    /// обращения, поэтому после смены значения в Vault здесь сразу новое.
+    /// </summary>
+    private protected ISettingsStore Settings { get; } = settings.Store;
 
     /// <summary>
     /// Пользователь запроса в том виде, в каком его принимает слой данных. Разрешается один раз

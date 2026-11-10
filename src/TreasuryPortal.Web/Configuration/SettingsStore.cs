@@ -1,0 +1,27 @@
+using TreasuryPortal.Web.Configuration.Abstract;
+
+namespace TreasuryPortal.Web.Configuration;
+
+/// <inheritdoc cref="ISettingsStore"/>
+/// <remarks>
+/// Читает ту же конфигурацию, в которую VaultInit() подмешал значения из Vault. Ключи — те же,
+/// что используют слой данных (DbCoreOptions) и аутентификация (AuthOptions), поэтому значение
+/// у одного ключа всегда одно, с какой бы стороны его ни читали.
+/// </remarks>
+public sealed class SettingsStore(IConfiguration configuration) : ISettingsStore
+{
+    public string PGSQLServer => configuration["Configuration:ConnectionStrings:PGSQLServer"] ?? "";
+
+    public int AccessCacheSeconds => Int("Auth:AccessCacheSeconds", 60);
+
+    public int HostNameCacheMinutes => Int("Auth:HostNameCacheMinutes", 60);
+
+    public int WriteLockWaitSeconds => Int("Configuration:WriteLockWaitSeconds", 10);
+
+    // Новая настройка интеграции добавляется одной строкой, как в BanknoteOps:
+    // public string EmailServiceEndpoint => configuration["Configuration:ServiceLinks:EmailService:Endpoint"] ?? "";
+    // public int MaxFileSize => Int("Configuration:MaxFileSize", 20 * 1024 * 1024);
+
+    private int Int(string key, int fallback) =>
+        int.TryParse(configuration[key], out var value) ? value : fallback;
+}

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TreasuryPortal.DbCore.UOW.Abstract;
 using TreasuryPortal.Web.Auth;
+using TreasuryPortal.Web.Configuration.Abstract;
 using TreasuryPortal.Web.Controllers.Base;
 
 namespace TreasuryPortal.Web.Controllers;
@@ -14,8 +15,8 @@ namespace TreasuryPortal.Web.Controllers;
 /// </summary>
 [Route("api/dictionaries")]
 [AuthorizePerm(AppPermissions.DictionaryRead)]
-public sealed class DictionaryController(ITreasuryUow uow, CurrentUser currentUser)
-    : ControllerCore(uow, currentUser)
+public sealed class DictionaryController(ITreasuryUow uow, ISettingsHolder settings, CurrentUser currentUser)
+    : ControllerCore(uow, settings, currentUser)
 {
     /// <summary>GET api/dictionaries/{name} — значения одного справочника.</summary>
     [HttpGet("{name}")]
