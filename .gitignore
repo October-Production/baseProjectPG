@@ -18,6 +18,7 @@ npm-debug.log*
 # --- Локальное ---
 # Подменённая личность для AdHelper в Debug (DbCore/Utils/AdHelper.cs)
 user_stub.json
-# Локальные секреты вместо Vault: appsettings.Local.json не уходит в репозиторий
+# Страховка: приложение этот файл не читает, но если кто-то положит в него строку
+# подключения с паролем, она не уедет в репозиторий
 appsettings.Local.json
 *.log

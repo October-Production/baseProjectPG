@@ -19,7 +19,6 @@ TreasuryPortal/
   src/TreasuryPortal.DbCore/   Всё, что связано с базой: репозитории, UOW, системный журнал
   src/TreasuryPortal.Client/   Angular 22 (zoneless, signals, Angular Material)
   deploy/                      Скрипт создания сайта IIS с Windows-аутентификацией
-  local-debug/                 Заглушка Vault для машин без внутреннего nuget-фида
   db/                          Что должно быть в базе, чтобы портал заработал
 ```
 
@@ -299,29 +298,17 @@ BanknoteOps и NBC вместе с написанием «Timout» — если 
 Секция `Auth` в `appsettings.json` больше не нужна: в ней осталась только отладочная подмена
 прав `Auth:Dev`, а она живёт в `appsettings.Development.json`.
 
-На машине без внутреннего nuget-фида `Directory.Build.targets` в корне решения снимает
-`PackageReference`, исключает `VaultExtension.cs` и подставляет заглушку из `local-debug/`.
-Внутри проекта `TreasuryPortal.Web` при этом ничего не меняется, поэтому обновление с сервера
-заглушку не затирает.
-
-Подмена работает **только в Debug** либо по явному `-p:UseVault=false`. Release без фида падает
-на restore с понятной ошибкой `NU1101: Unable to find package Util.VaultCoreLib` — и это нужное
-поведение: опубликовать сборку, в которой Vault ничего не делает, страшнее, чем увидеть ошибку
-восстановления пакета. Совсем убрать подмену: удалить `Directory.Build.targets` и `local-debug/`.
+**Vault работает везде, включая отладку.** Заглушек нет: на машине разработчика переменные
+окружения с LDAP-учёткой дают доступ к dev-разделу Vault (`MountPath` в `appsettings.json`),
+где лежат все настройки, включая строку подключения. Локальных файлов с секретами нет и не нужно.
+Обратная сторона — без внутреннего nuget-фида банка проект не восстанавливается: пакет
+`Util.VaultCoreLib` берётся только оттуда.
 
 `appsettings.Development.json` в публикацию не попадает (исключён в `.csproj`): в нём лежит
 секция `Auth:Dev`, раздающая все роли и права.
 
-Локально строку подключения кладите в `appsettings.Local.json` рядом с `appsettings.json`
-(файл в `.gitignore`):
-
-```json
-{ "Configuration": { "ConnectionStrings": { "PGSQLServer": "Host=...;Database=...;Username=...;Password=..." } } }
-```
-
-Имя ключа то же, что в BanknoteOps. Источник подключений строится лениво: без строки портал
-всё равно стартует и покажет понятную ошибку на первом запросе к данным — это нужно, чтобы
-отлаживать интерфейс с подменой прав `Auth:Dev`.
+Источник подключений строится лениво: если Vault не отдал строку подключения, портал всё равно
+стартует и покажет понятную ошибку на первом запросе к данным, а не упадёт на старте.
 
 ---
 
@@ -492,14 +479,12 @@ await notify.ToRoleAsync(AppRoles.Reader,
 
 | Что | Где | Почему не доезжает до сервера |
 |---|---|---|
-| `VaultExtension` (заглушка) | `local-debug/VaultInit.Stub.cs` | подменяется только в Debug или по `-p:UseVault=false` |
 | `UserStub`, `UserStubUser`, `AdHelper.GetStubPrincipalInfo` | `DbCore/Utils/AdHelper.cs` | под `#if DEBUG`, в Release не компилируются |
 | `SpaDevServerLauncher` | `Web/Spa/` | регистрируется, только если задан `Spa:DevServer:Url` |
 | `SpaDevServerOptions` | `Web/Spa/` | секция есть только в `appsettings.Development.json` |
 | `DevAccessOptions` | `Web/Auth/AuthOptions.cs` | `UserDirectory` проверяет окружение явно |
 | `SpaHosting.UseSpaDevServerProxy`, `ChallengeAnonymous`, `IsWebSocketUpgrade`, `IsClientRequest` | `Web/Spa/SpaHosting.cs` | класс нужен всегда, но прокси включается ключом `Spa:DevServer:Url` |
 | `appsettings.Development.json` | `Web/` | исключён из публикации (`CopyToPublishDirectory=Never`) |
-| `Directory.Build.targets`, папка `local-debug/` | корень решения | на сервере их быть не должно |
 
 Признак `devAccess` в ответе `api/auth/me` и метка `DEV` в шапке — не код отладки, а индикатор:
 он загорается, когда роли подменены секцией `Auth:Dev`, и на сервере остаётся выключенным.

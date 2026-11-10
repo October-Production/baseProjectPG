@@ -8,10 +8,11 @@ namespace TreasuryPortal.Web.Configuration;
 /// обычным Configuration["Configuration:ConnectionStrings:PGSQLServer"].
 ///
 /// Учётка для входа в Vault берётся из переменных окружения машины — ни логина, ни пароля
-/// в проекте нет.
+/// в проекте нет. Имена переменных задают константы пакета:
+/// VaultEnvironmentVariableNames.LdapUser и VaultEnvironmentVariableNames.LdapPassword.
 ///
-/// Локально этот файл не компилируется: Directory.Build.targets подменяет его заглушкой
-/// из local-debug/, потому что внутренний пакет Util.VaultCoreLib доступен не на всякой машине.
+/// Работает одинаково и на сервере, и при отладке: на машине разработчика переменные
+/// окружения дают доступ к dev-разделу Vault (MountPath в appsettings.json).
 /// </summary>
 public static class VaultExtension
 {
@@ -26,14 +27,14 @@ public static class VaultExtension
                 ldapPassword: Environment.GetEnvironmentVariable(VaultEnvironmentVariableNames.LdapPassword),
                 reloadOnChange: true,
                 reloadCheckIntervalSeconds: 10,
-                additionalCharactersForConfigurationPath: ['.']),
+                additionalCharactersForConfigurationPath: new[] { '.' }),
             vault["MountPath"]!,
             vault["MountPoint"],
             vault["MountPathGeneral"]);
 
         // Следит за изменениями в Vault и подхватывает их без перезапуска приложения
         var watcher = new VaultChangeWatcher(configuration);
-        _ = Task.Run(() => watcher.WatchAsync(CancellationToken.None));
+        _ = Task.Run(async () => await watcher.WatchAsync(CancellationToken.None));
 
         return configuration;
     }

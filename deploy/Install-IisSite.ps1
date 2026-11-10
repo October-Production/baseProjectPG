@@ -119,5 +119,6 @@ Write-Host "Готово: $($scheme)://$($hostPart):$Port/"
 Write-Host "Дальше: скопируйте результат dotnet publish в $PhysicalPath."
 Write-Host 'Если сайт уже работает, сначала положите в папку app_offline.htm - иначе DLL будут заняты процессом.'
 Write-Host ''
-Write-Host 'Не забудьте: переменные окружения VAULT_LDAP_USER / VAULT_LDAP_PASSWORD для учётки пула,'
+Write-Host 'Не забудьте: переменные окружения с LDAP-учёткой для Vault у учётки пула (имена - в константах'
+Write-Host 'VaultEnvironmentVariableNames.LdapUser / LdapPassword пакета Util.VaultCoreLib),'
 Write-Host 'отключённый HTTP/2 на https-привязке и хост в AuthServerAllowlist для тихого SSO.'

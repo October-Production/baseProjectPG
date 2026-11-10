@@ -17,16 +17,14 @@ db/                          что должно быть в базе
 
 ## Запуск локально
 
-Нужны .NET SDK 10 и Node.js 22+.
+Нужны .NET SDK 10, Node.js 22+ и доступ к внутреннему nuget-фиду банка — из него
+восстанавливается пакет `Util.VaultCoreLib`.
 
 1. Один раз: `dotnet dev-certs https --trust`.
-2. Положите строку подключения в `src/TreasuryPortal.Web/appsettings.Local.json` (файл
-   в `.gitignore`):
-
-```json
-{ "Configuration": { "ConnectionStrings": { "PGSQLServer": "Host=...;Database=...;Username=...;Password=..." } } }
-```
-
+2. Переменные окружения с LDAP-учёткой для Vault — те же, что для BanknoteOps и NBC (имена задают
+   константы `VaultEnvironmentVariableNames.LdapUser` / `LdapPassword` пакета). Через них
+   портал читает dev-раздел Vault (`MountPath` в `appsettings.json`), где лежат все настройки,
+   включая строку подключения. Никаких локальных файлов с секретами не нужно.
 3. В Visual Studio — F5 (профиль `https` или `IIS Express`), или в терминале:
 
 ```bash
@@ -73,11 +71,6 @@ dotnet run --project src/TreasuryPortal.Web --launch-profile https
 ```powershell
 dotnet publish src/TreasuryPortal.Web -c Release -o publish
 ```
-
-Release-сборка требует внутренний пакет `Util.VaultCoreLib` — это намеренно: публиковать сборку,
-в которой Vault ничего не делает, нельзя. Если фида на машине нет, а собрать нужно (например,
-чтобы проверить публикацию локально), добавьте `-p:UseVault=false` — тогда подставится заглушка,
-и строку подключения придётся задавать настройками.
 
 ```powershell
 # на сервере, Windows PowerShell 5.1 от администратора
@@ -129,9 +122,9 @@ NTLM делает трёхшаговый handshake на каждом новом 
 | `InvalidOperationException: The Negotiate Authentication handler cannot be used on a server that directly supports Windows Authentication` | В IIS или IIS Express выключена Windows-аутентификация. |
 | Окно логина в Chrome или Edge | Хост не в зоне Local Intranet и не в `AuthServerAllowlist`. |
 | Пользователь видит «Немає доступу» | Ни одна его AD-группа не выдаёт роль портала, либо имена ролей не заведены в базе. |
-| `Не задана строка подключения Configuration:ConnectionStrings:PGSQLServer` | Нет `appsettings.Local.json` локально или не отработал Vault на сервере. Портал при этом стартует: интерфейс работает, данные — нет. |
+| `Не задана строка подключения Configuration:ConnectionStrings:PGSQLServer` | Vault не отдал строку: не заданы переменные окружения с LDAP-учёткой, у учётки нет доступа к разделу `MountPath` или в разделе нет строки подключения (ключ конфигурации `Configuration:ConnectionStrings:PGSQLServer`). Портал при этом стартует: интерфейс работает, данные — нет. |
 | Красная точка в шапке, в консоли `Failed to start the connection` | Не поднялся хаб. На IIS проверьте, что для сайта включён WebSocket Protocol; портал при этом работает, просто без мгновенных обновлений. |
 | В обозревателе решений нет клиента | Открыт не `TreasuryPortal.slnx`, или у Visual Studio не установлена рабочая нагрузка «ASP.NET and web development» — без неё SDK для `.esproj` не ставится. |
 | В логе «Журнал операций не успевает: отброшено N записей» | База недоступна или не справляется. Пользователю это не мешает — журнал теряется намеренно. |
 | 502 на `https://localhost:7210` | Не запустился `ng serve`. Ошибка — в консоли приложения. |
-| `restore` падает на `Util.VaultCoreLib` | Нет внутреннего nuget-фида. Должны присутствовать `Directory.Build.targets` и `local-debug/`. |
+| `restore` падает на `Util.VaultCoreLib` (`NU1101`) | На машине не настроен внутренний nuget-фид банка. Без него проект не собирается — ни в Debug, ни в Release. |

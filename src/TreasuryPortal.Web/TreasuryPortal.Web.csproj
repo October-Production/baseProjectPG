@@ -14,7 +14,8 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
     <!-- Только для Development: всё, что не API и не хаб, проксируется на ng serve (Spa/SpaHosting.cs) -->
     <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="10.0.14" />
-    <!-- Внутренний пакет банка. Локально снимается в Directory.Build.targets вместе с Configuration/VaultExtension.cs -->
+    <!-- Внутренний пакет банка: подмешивает настройки из Vault в конфигурацию (Configuration/VaultExtension.cs).
+         Восстанавливается из внутреннего nuget-фида — без доступа к нему проект не собирается -->
     <PackageReference Include="Util.VaultCoreLib" Version="1.10.0" />
   </ItemGroup>
 
@@ -34,8 +35,6 @@
   <ItemGroup>
     <!-- Dev-настройки на сервер не уезжают: в них лежит подмена ролей и прав (Auth:Dev) -->
     <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
-    <!-- Локальные секреты вместо Vault: в репозиторий не попадает и в публикацию тоже -->
-    <Content Update="appsettings.Local.json" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
   <!-- Первая Debug-сборка: ставим npm-зависимости клиента, чтобы ng serve поднялся с первого F5 -->
