@@ -91,7 +91,8 @@ TreasuryPortal/
 
 1. База отдаёт сразу весь список — два вызова на пользователя, а не по одному на каждое право.
 2. Роли и права складываются в claim'ы один раз при входе (`AccessClaimsTransformation`)
-   и кэшируются (`Auth:AccessCacheSeconds`, по умолчанию минута).
+   и кэшируются (`Configuration:UserRolesCacheTimoutSecond`, по умолчанию минута; ключ тот же,
+   что в BanknoteOps и NBC, и его можно выставить в Vault).
 3. Проверка права на эндпоинте (`PermissionAuthorizationHandler`) в базу не ходит вообще.
 
 **Как закрыть эндпоинт правом:**
@@ -281,9 +282,22 @@ Program.cs:  VaultInit()  ──►  SettingsHolder (singleton)  ──►  Cont
 закрывается сразу — на нём могут доигрывать начатые запросы, — а через 30 секунд. Поэтому
 репозитории держат `PgDataSource`, а не готовый пул.
 
-Остальные ключи (`Configuration:Log:*`, `WriteLockWaitSeconds`, `Auth:HostNameCacheMinutes`)
-читаются при старте: это настройки работы, а не секреты, и после их смены нужен перезапуск.
-`Auth:AccessCacheSeconds` и `Auth:Dev` подхватываются на ходу.
+**Что выставляется в Vault.** Любой ключ из секции `Configuration` в `appsettings.json`:
+значение из Vault перекрывает здешнее, потому что `VaultInit()` подключается последним,
+а в `appsettings.json` остаются значения по умолчанию. Имена ключей кэшей взяты из
+BanknoteOps и NBC вместе с написанием «Timout» — если такие ключи уже лежат в Vault,
+в общем разделе `MountPathGeneral`, портал подхватит их без заведения новых.
+
+| Ключ | Что задаёт | Подхватывается |
+|---|---|---|
+| `Configuration:ConnectionStrings:PGSQLServer` | строка подключения к PostgreSQL | на ходу |
+| `Configuration:UserRolesCacheTimoutSecond` | сколько секунд кэшировать роли и права | на ходу |
+| `Configuration:HostNameCacheTimoutMinutes` | сколько минут кэшировать имя машины клиента | на ходу |
+| `Configuration:WriteLockWaitSeconds` | ожидание общего замка записи | при старте |
+| `Configuration:Log:*` | очередь системного журнала | при старте |
+
+Секция `Auth` в `appsettings.json` больше не нужна: в ней осталась только отладочная подмена
+прав `Auth:Dev`, а она живёт в `appsettings.Development.json`.
 
 На машине без внутреннего nuget-фида `Directory.Build.targets` в корне решения снимает
 `PackageReference`, исключает `VaultExtension.cs` и подставляет заглушку из `local-debug/`.

@@ -1,17 +1,18 @@
 using System.Collections.Concurrent;
 using System.Net;
-using Microsoft.Extensions.Options;
-using TreasuryPortal.Web.Auth;
+using TreasuryPortal.Web.Configuration.Abstract;
 
 namespace TreasuryPortal.Web.Infrastructure;
 
 /// <summary>
 /// В системный журнал пишется машина, с которой пришло изменение. Обратный DNS медленный, а
 /// адресов за день повторяется немного, поэтому ответы кэшируются.
+///
+/// Время кэша (Configuration:HostNameCacheTimoutMinutes) читается при каждой проверке,
+/// а не один раз при старте, — новое значение из Vault действует сразу.
 /// </summary>
-public sealed class ClientHostResolver(IOptions<AuthOptions> options)
+public sealed class ClientHostResolver(ISettingsHolder settings)
 {
-    private readonly TimeSpan _lifetime = TimeSpan.FromMinutes(options.Value.HostNameCacheMinutes);
     private readonly ConcurrentDictionary<IPAddress, CacheItem> _cache = new();
 
     public string Resolve(ConnectionInfo? connection) => Resolve(connection?.RemoteIpAddress);
@@ -24,13 +25,14 @@ public sealed class ClientHostResolver(IOptions<AuthOptions> options)
         }
 
         var now = DateTime.UtcNow;
+        var lifetime = TimeSpan.FromMinutes(settings.Store.HostNameCacheMinutes);
         var item = _cache.GetOrAdd(ip, _ => new CacheItem());
 
-        if (item.Name is null || now > item.ResolvedAt + _lifetime)
+        if (item.Name is null || now > item.ResolvedAt + lifetime)
         {
             lock (item)
             {
-                if (item.Name is null || now > item.ResolvedAt + _lifetime)
+                if (item.Name is null || now > item.ResolvedAt + lifetime)
                 {
                     item.Name = Lookup(ip);
                     item.ResolvedAt = now;

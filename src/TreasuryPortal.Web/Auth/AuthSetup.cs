@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using TreasuryPortal.Web.Configuration;
+using TreasuryPortal.Web.Configuration.Abstract;
 using TreasuryPortal.Web.Infrastructure;
 
 namespace TreasuryPortal.Web.Auth;
@@ -17,6 +20,10 @@ public static class AuthSetup
         this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<AuthOptions>(configuration.GetSection(AuthOptions.SectionName));
+
+        // Время кэшей аутентификация берёт из SettingsStore. В Program.cs держатель уже
+        // зарегистрирован после VaultInit(); TryAdd — страховка, если вызвать этот метод отдельно
+        services.TryAddSingleton<ISettingsHolder, SettingsHolder>();
 
         services.AddHttpContextAccessor();
         services.AddMemoryCache();

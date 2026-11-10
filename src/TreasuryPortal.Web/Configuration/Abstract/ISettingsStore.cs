@@ -17,10 +17,16 @@ public interface ISettingsStore
     /// <summary>Строка подключения к PostgreSQL. Ключ тот же, что в BanknoteOps.</summary>
     string PGSQLServer { get; }
 
-    /// <summary>Сколько секунд держать в памяти роли и права пользователя (в BanknoteOps — UserRolesCacheTimoutSecond).</summary>
+    /// <summary>
+    /// Сколько секунд держать в памяти роли и права пользователя.
+    /// Ключ Configuration:UserRolesCacheTimoutSecond — тот же, что в BanknoteOps и NBC.
+    /// </summary>
     int AccessCacheSeconds { get; }
 
-    /// <summary>Сколько минут держать в памяти имя машины клиента для журнала.</summary>
+    /// <summary>
+    /// Сколько минут держать в памяти имя машины клиента для журнала.
+    /// Ключ Configuration:HostNameCacheTimoutMinutes — тот же, что в NBC.
+    /// </summary>
     int HostNameCacheMinutes { get; }
 
     /// <summary>Сколько секунд ждать общий замок записи; 0 — не брать замок.</summary>

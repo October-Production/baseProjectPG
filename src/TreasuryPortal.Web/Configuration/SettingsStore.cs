@@ -12,9 +12,11 @@ public sealed class SettingsStore(IConfiguration configuration) : ISettingsStore
 {
     public string PGSQLServer => configuration["Configuration:ConnectionStrings:PGSQLServer"] ?? "";
 
-    public int AccessCacheSeconds => Int("Auth:AccessCacheSeconds", 60);
+    // Ключи кэшей — те же, что в BanknoteOps и NBC, вместе с написанием «Timout»: это уже
+    // имена в Vault, и при совпадении значение подхватится оттуда без заведения нового ключа
+    public int AccessCacheSeconds => Int("Configuration:UserRolesCacheTimoutSecond", 60);
 
-    public int HostNameCacheMinutes => Int("Auth:HostNameCacheMinutes", 60);
+    public int HostNameCacheMinutes => Int("Configuration:HostNameCacheTimoutMinutes", 60);
 
     public int WriteLockWaitSeconds => Int("Configuration:WriteLockWaitSeconds", 10);
 

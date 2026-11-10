@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using TreasuryPortal.DbCore.Models;
 using TreasuryPortal.DbCore.Models.Abstract;
 using TreasuryPortal.DbCore.UOW.Abstract;
+using TreasuryPortal.Web.Configuration.Abstract;
 using TreasuryPortal.Web.Infrastructure;
 
 namespace TreasuryPortal.Web.Auth;
@@ -12,11 +13,15 @@ namespace TreasuryPortal.Web.Auth;
 /// Кто вошёл и что ему можно. Здесь сходятся два дорогих источника — AD (имена групп) и база
 /// (веб-роли и права), — и оба кэшируются: экран открывает залп запросов, и платить за каждый
 /// обращением к домену и к базе нельзя.
+///
+/// Время кэша берётся из <see cref="ISettingsStore.AccessCacheSeconds"/> в момент записи
+/// в кэш, поэтому новое значение из Vault действует сразу для следующих пользователей.
 /// </summary>
 public sealed class UserDirectory(
     ITreasuryUow uow,
     IMemoryCache cache,
     ClientHostResolver hostResolver,
+    ISettingsHolder settings,
     IOptionsMonitor<AuthOptions> options,
     IHostEnvironment environment,
     ILogger<UserDirectory> logger)
@@ -55,7 +60,7 @@ public sealed class UserDirectory(
 
         var pending = LoadAccessAsync(user, cancellationToken);
 
-        var seconds = options.CurrentValue.AccessCacheSeconds;
+        var seconds = settings.Store.AccessCacheSeconds;
         if (seconds > 0)
         {
             cache.Set(key, pending, TimeSpan.FromSeconds(seconds));
@@ -109,7 +114,7 @@ public sealed class UserDirectory(
 
     private IUserCredential Cache(string key, IUserCredential credential)
     {
-        var seconds = options.CurrentValue.AccessCacheSeconds;
+        var seconds = settings.Store.AccessCacheSeconds;
         if (seconds > 0)
         {
             cache.Set(key, credential, TimeSpan.FromSeconds(seconds));

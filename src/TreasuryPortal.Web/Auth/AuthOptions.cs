@@ -1,15 +1,14 @@
 namespace TreasuryPortal.Web.Auth;
 
-/// <summary>Секция Auth в appsettings.</summary>
+/// <summary>
+/// Секция Auth в appsettings. В ней осталась только отладочная подмена прав: время кэшей
+/// переехало в секцию Configuration (Configuration:UserRolesCacheTimoutSecond,
+/// Configuration:HostNameCacheTimoutMinutes), рядом со строкой подключения, — чтобы их можно
+/// было выставить в Vault так же, как в BanknoteOps и NBC. Читаются они через ISettingsStore.
+/// </summary>
 public sealed class AuthOptions
 {
     public const string SectionName = "Auth";
-
-    /// <summary>Сколько секунд держать в памяти роли и права пользователя, выданные базой.</summary>
-    public int AccessCacheSeconds { get; set; } = 60;
-
-    /// <summary>Сколько минут держать в памяти результат обратного DNS для машины клиента.</summary>
-    public int HostNameCacheMinutes { get; set; } = 60;
 
     /// <summary>
     /// Только Development: роли и права текущего пользователя вместо похода в базу.
