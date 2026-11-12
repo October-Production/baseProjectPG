@@ -9,9 +9,9 @@ namespace TreasuryPortal.Web.Spa;
 
 /// <summary>
 /// Хостинг клиента. Класс нужен и на сервере, и при отладке, но ветки у него разные:
-/// в Production отдаётся собранный клиент из wwwroot, а при отладке всё, что не API и не хаб,
-/// проксируется на ng serve. Дев-ветка включается ключом Spa:DevServer:Url, который задан
-/// только в appsettings.Development.json.
+/// в Production отдаётся собранный клиент из wwwroot, а при отладке всё, для чего у бэкенда
+/// нет своего адреса, проксируется на ng serve. Дев-ветка включается ключом Spa:DevServer:Url,
+/// который задан только в appsettings.Development.json.
 /// </summary>
 public static partial class SpaHosting
 {
@@ -55,13 +55,13 @@ public static partial class SpaHosting
     /// ТОЛЬКО ДЛЯ ОТЛАДКИ (Development).
     ///
     /// Браузер ходит только сюда — Kestrel или IIS Express проводят Windows-аутентификацию сами,
-    /// а всё, что не API и не хаб, уходит на ng serve. Обратная схема (ng serve с proxy.conf
-    /// на API) ломает NTLM: прокси не держит соединения 1:1, шаги handshake разъезжаются
-    /// по разным сокетам бэкенда — отсюда 400.
+    /// а всё, для чего у бэкенда нет своего адреса, уходит на ng serve. Обратная схема (ng serve
+    /// с proxy.conf на API) ломает NTLM: прокси не держит соединения 1:1, шаги handshake
+    /// разъезжаются по разным сокетам бэкенда — отсюда 400.
     ///
     /// UseSpa — терминальное middleware, а в minimal hosting исполнение эндпоинтов добавляется
-    /// в конец конвейера. Поэтому ветку надо заводить через MapWhen и явно исключать свои пути,
-    /// иначе прокси перехватит /api и /hubs раньше, чем до них дойдёт очередь.
+    /// в конец конвейера. Поэтому ветку надо заводить через MapWhen и пускать в неё только
+    /// запросы к клиенту, иначе прокси перехватит адреса бэкенда раньше, чем до них дойдёт очередь.
     /// </summary>
     private static void UseSpaDevServerProxy(this WebApplication app, SpaDevServerOptions devServer)
     {
@@ -77,7 +77,16 @@ public static partial class SpaHosting
         });
     }
 
+    /// <summary>
+    /// ТОЛЬКО ДЛЯ ОТЛАДКИ (Development): запрос к клиенту — тот, для которого у бэкенда нет
+    /// эндпоинта. Маршрутизация к этому моменту уже отработала, поэтому /health, описание API
+    /// и контроллеры сюда не попадают сами, без перечисления адресов.
+    ///
+    /// /api и /hubs исключены целиком: неизвестный адрес под ними — это 404 бэкенда,
+    /// а не страница клиента.
+    /// </summary>
     private static bool IsClientRequest(HttpContext context) =>
+        context.GetEndpoint() is null &&
         !context.Request.Path.StartsWithSegments("/api") &&
         !context.Request.Path.StartsWithSegments("/hubs");
 

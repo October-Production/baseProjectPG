@@ -41,7 +41,7 @@ dotnet run --project src/TreasuryPortal.Web --launch-profile https
 по-прежнему нужно `TreasuryPortal.Web` — он и поднимет `ng serve`.
 
 В Development браузер ходит только на Kestrel или IIS Express: они проводят Windows-аутентификацию
-сами, а всё, что не `api/` и не `hubs/`, проксируют на `ng serve` вместе с HMR (этим занимается
+сами, а всё, кроме своих адресов (`api/`, `hubs/`, `/health`), проксируют на `ng serve` вместе с HMR (этим занимается
 `UseProxyToSpaDevelopmentServer` из `Microsoft.AspNetCore.SpaServices.Extensions` — тот же
 пакет и тот же вызов, что в NBC). Обратная схема — `ng serve`
 с `proxy.conf` на API — ломает NTLM: прокси не держит соединения 1:1, шаги handshake уходят
