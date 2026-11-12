@@ -14,19 +14,10 @@ namespace TreasuryPortal.DbCore.Log.Abstract;
 /// </summary>
 public interface ISystemLog
 {
-    /// <summary>Чтение: запись ставится в очередь, вызывающий поток не ждёт ничего.</summary>
+    /// <summary>
+    /// Начало операции, одинаково для чтения и записи: запись ставится в очередь,
+    /// вызывающий поток не ждёт ничего.
+    /// </summary>
     /// <param name="request">Тело запроса; будет сериализовано в JSON прямо здесь.</param>
     LogOperation Start(IUserCredential user, string entity, string operation, object? request = null);
-
-    /// <summary>
-    /// Запись: то же самое плюс общий на процесс замок записи. Ожидание — только на семафоре
-    /// в памяти, в базу по-прежнему никто не ходит. Если замок не взят, первый же
-    /// <see cref="LogOperation.EnsureWriteLock"/> бросит понятную пользователю ошибку.
-    /// </summary>
-    ValueTask<LogOperation> StartWriteAsync(
-        IUserCredential user,
-        string entity,
-        string operation,
-        object? request = null,
-        CancellationToken cancellationToken = default);
 }

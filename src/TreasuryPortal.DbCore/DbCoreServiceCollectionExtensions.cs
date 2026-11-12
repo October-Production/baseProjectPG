@@ -28,7 +28,6 @@ public static class DbCoreServiceCollectionExtensions
         services.TryAddSingleton<LogQueue>();
         services.TryAddSingleton<ILogSink>(provider => provider.GetRequiredService<LogQueue>());
         services.TryAddSingleton<ILogRepository, LogRepository>();
-        services.TryAddSingleton<WriteLock>();
         services.TryAddSingleton<ISystemLog, SystemLog>();
         services.AddHostedService<SystemLogWriter>();
 

@@ -24,7 +24,7 @@ internal sealed class DictionaryRepository(PgDataSource dataSource, ISystemLog l
 
     public Task<JsonElement> GetListsAsync(
         IUserCredential user, IEnumerable<string> dictionaryNames, CancellationToken cancellationToken = default) =>
-        ReadAsync(
+        CallAsync(
             user,
             Entity,
             "lists",

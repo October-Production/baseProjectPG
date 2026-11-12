@@ -7,7 +7,7 @@ using TreasuryPortal.DbCore.Repositories.Abstract;
 namespace TreasuryPortal.DbCore.Repositories;
 
 /// <summary>
-/// Системный журнал в базе. Функции и форма параметров — те же, что в BanknoteOps:
+/// Системный журнал в базе.:
 /// csen.log_event(entity, op, json, user, err) возвращает log_id,
 /// csen.log_event_end(id, json, err) закрывает запись.
 ///

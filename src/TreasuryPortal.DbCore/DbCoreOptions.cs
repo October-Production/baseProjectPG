@@ -10,17 +10,10 @@ public sealed class DbCoreOptions
 
     /// <summary>Системный журнал: очередь и фоновая запись.</summary>
     public LogOptions Log { get; set; } = new();
-
-    /// <summary>
-    /// Сколько секунд ждать общий замок записи. Он один на процесс: две параллельные правки
-    /// одной сущности не должны идти одновременно. 0 — не брать замок вовсе.
-    /// </summary>
-    public int WriteLockWaitSeconds { get; set; } = 10;
 }
 
 public sealed class ConnectionStringsOptions
 {
-    /// <summary>PostgreSQL портала. Имя ключа то же, что в BanknoteOps.</summary>
     public string PGSQLServer { get; set; } = "";
 }
 

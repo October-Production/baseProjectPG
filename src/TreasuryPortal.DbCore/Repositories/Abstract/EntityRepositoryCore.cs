@@ -28,7 +28,7 @@ internal abstract class EntityRepositoryCore(PgDataSource dataSource, ISystemLog
         object? request = null,
         string? function = null,
         CancellationToken cancellationToken = default) =>
-        ReadAsync(user, Entity, "list", function ?? Function("list"), request, ReadList, cancellationToken);
+        CallAsync(user, Entity, "list", function ?? Function("list"), request, ReadList, cancellationToken);
 
     /// <summary>Одна запись со вложенными списками: csen.&lt;сущность&gt;_item(user, request).</summary>
     private protected Task<JsonElement> GetItemAsync(
@@ -36,7 +36,7 @@ internal abstract class EntityRepositoryCore(PgDataSource dataSource, ISystemLog
         object request,
         string? function = null,
         CancellationToken cancellationToken = default) =>
-        ReadAsync(user, Entity, "item", function ?? Function("item"), request, ReadItem, cancellationToken);
+        CallAsync(user, Entity, "item", function ?? Function("item"), request, ReadItem, cancellationToken);
 
     /// <summary>Создание или изменение: csen.&lt;сущность&gt;_save(user, request).</summary>
     private protected Task<JsonElement> SaveAsync(
@@ -44,7 +44,7 @@ internal abstract class EntityRepositoryCore(PgDataSource dataSource, ISystemLog
         object request,
         string? function = null,
         CancellationToken cancellationToken = default) =>
-        WriteAsync(user, Entity, "save", function ?? Function("save"), request, ReadItem, cancellationToken);
+        CallAsync(user, Entity, "save", function ?? Function("save"), request, ReadItem, cancellationToken);
 
     /// <summary>Удаление: csen.&lt;сущность&gt;_delete(user, request).</summary>
     private protected Task<JsonElement> DeleteAsync(
@@ -52,7 +52,7 @@ internal abstract class EntityRepositoryCore(PgDataSource dataSource, ISystemLog
         object request,
         string? function = null,
         CancellationToken cancellationToken = default) =>
-        WriteAsync(user, Entity, "delete", function ?? Function("delete"), request, ReadItem, cancellationToken);
+        CallAsync(user, Entity, "delete", function ?? Function("delete"), request, ReadItem, cancellationToken);
 
     private string Function(string operation) => $"{Entity}_{operation}";
 }

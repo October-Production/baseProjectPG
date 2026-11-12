@@ -28,7 +28,4 @@ public interface ISettingsStore
     /// Ключ Configuration:HostNameCacheTimoutMinutes — тот же, что в NBC.
     /// </summary>
     int HostNameCacheMinutes { get; }
-
-    /// <summary>Сколько секунд ждать общий замок записи; 0 — не брать замок.</summary>
-    int WriteLockWaitSeconds { get; }
 }

@@ -56,14 +56,18 @@ internal abstract class PgRepositoryCore(PgDataSource dataSource, ISystemLog log
 
     #endregion
 
-    #region Чтение и запись
+    #region Вызов функции
 
     /// <summary>
     /// Выполняет функцию и отдаёт reader в <paramref name="readData"/>. Операция попадает
     /// в системный журнал от начала до конца, вместе с ошибкой, — но ни одна из этих записей
     /// не ждёт базу: они уходят в очередь фоновой службы.
+    ///
+    /// Чтение и запись вызываются одинаково. Очереди на запись в приложении нет намеренно:
+    /// она видела бы только свой процесс. Две правки могут прийти в функцию одновременно,
+    /// и корректной при этом её делает сама функция — см. db/README.md, «Одновременные правки».
     /// </summary>
-    private protected async Task<JsonElement> ReadAsync(
+    private protected async Task<JsonElement> CallAsync(
         IUserCredential user,
         string entity,
         string operation,
@@ -75,32 +79,6 @@ internal abstract class PgRepositoryCore(PgDataSource dataSource, ISystemLog log
         using var logged = Log.Start(user, entity, operation, request);
         try
         {
-            return await ExecuteAsync(user, function, request, readData, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logged.Fail(ex);
-            return WrapError(ex);
-        }
-    }
-
-    /// <summary>
-    /// То же, что <see cref="ReadAsync"/>, но сначала берётся общий замок записи: две правки
-    /// одной сущности не идут одновременно.
-    /// </summary>
-    private protected async Task<JsonElement> WriteAsync(
-        IUserCredential user,
-        string entity,
-        string operation,
-        string function,
-        object? request,
-        Func<NpgsqlDataReader, CancellationToken, Task<JsonElement>> readData,
-        CancellationToken cancellationToken = default)
-    {
-        using var logged = await Log.StartWriteAsync(user, entity, operation, request, cancellationToken);
-        try
-        {
-            logged.EnsureWriteLock();
             return await ExecuteAsync(user, function, request, readData, cancellationToken);
         }
         catch (Exception ex)

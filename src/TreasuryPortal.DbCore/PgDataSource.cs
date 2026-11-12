@@ -8,7 +8,7 @@ namespace TreasuryPortal.DbCore;
 /// <summary>
 /// Источник подключений к PostgreSQL, один на приложение.
 ///
-/// Строится как в BanknoteOps: multi-host, работа идёт через сессию с признаком Primary —
+/// Строится: multi-host, работа идёт через сессию с признаком Primary —
 /// на кластере это гарантирует, что чтение и запись попадают на мастер, а на одиночном
 /// сервере ведёт себя как обычный пул.
 ///
@@ -34,7 +34,6 @@ public sealed class PgDataSource(
     private volatile Pool? _current;
     private bool _disposed;
 
-    /// <summary>Сессия к мастеру: через неё идут и чтение, и запись.</summary>
     public NpgsqlDataSource Primary
     {
         get
@@ -69,7 +68,6 @@ public sealed class PgDataSource(
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
 
-            // Пока ждали замок, строку мог построить другой поток
             var previous = _current;
             if (previous is not null && previous.ConnectionString == connectionString)
             {

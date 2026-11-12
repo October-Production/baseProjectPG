@@ -5,16 +5,13 @@ namespace TreasuryPortal.DbCore.Log;
 
 /// <summary>
 /// Одна операция в системном журнале. Создаётся через <see cref="ISystemLog"/>, живёт в
-/// using-блоке репозитория: закрытие блока отправляет в журнал конец операции и отпускает
-/// замок записи.
+/// using-блоке репозитория: закрытие блока отправляет в журнал конец операции.
 ///
 /// Ни один метод не ждёт базу — всё уходит в очередь.
 /// </summary>
 public sealed class LogOperation : IDisposable
 {
     private readonly ILogSink _sink;
-    private readonly WriteLock? _writeLock;
-    private readonly bool _lockAcquired;
     private readonly string _entity;
     private readonly string _operation;
     private readonly string _userLogin;
@@ -29,9 +26,7 @@ public sealed class LogOperation : IDisposable
         string entity,
         string operation,
         string userLogin,
-        string json,
-        WriteLock? writeLock,
-        bool lockAcquired)
+        string json)
     {
         _sink = sink;
         Id = id;
@@ -39,23 +34,9 @@ public sealed class LogOperation : IDisposable
         _operation = operation;
         _userLogin = userLogin;
         _json = json;
-        _writeLock = writeLock;
-        _lockAcquired = lockAcquired;
     }
 
     public Guid Id { get; }
-
-    /// <summary>
-    /// Бросает понятную пользователю ошибку, если замок записи взять не удалось.
-    /// Вызывается первым делом в теле операции записи.
-    /// </summary>
-    public void EnsureWriteLock()
-    {
-        if (_writeLock is not null && !_writeLock.Disabled && !_lockAcquired)
-        {
-            throw new MessageException("Не вдалося отримати блокування запису — спробуйте ще раз", 409);
-        }
-    }
 
     /// <summary>Ошибка в операции: её текст уйдёт в журнал вместе с концом операции.</summary>
     public void Fail(Exception exception)
@@ -80,11 +61,6 @@ public sealed class LogOperation : IDisposable
         }
 
         _disposed = true;
-
-        if (_lockAcquired)
-        {
-            _writeLock?.Release();
-        }
 
         _sink.TryWrite(new LogEvent
         {

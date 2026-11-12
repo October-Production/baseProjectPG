@@ -4,9 +4,7 @@ using System.Text.Json;
 namespace TreasuryPortal.DbCore.Utils;
 
 /// <summary>
-/// Чтение ответа PostgreSQL. Соглашение то же, что в BanknoteOps: функция возвращает одно
-/// значение json или jsonb, а не набор строк, — поэтому никаких построителей документа
-/// из нескольких result set'ов здесь больше нет.
+/// Чтение ответа PostgreSQL.
 /// </summary>
 public static class JsonMiddleWare
 {

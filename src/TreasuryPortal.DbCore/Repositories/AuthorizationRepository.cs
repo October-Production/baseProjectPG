@@ -1,4 +1,3 @@
-using Npgsql;
 using NpgsqlTypes;
 using TreasuryPortal.DbCore.Log.Abstract;
 using TreasuryPortal.DbCore.Models;

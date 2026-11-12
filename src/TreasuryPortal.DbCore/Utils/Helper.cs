@@ -28,7 +28,7 @@ public static class Helper
 
     /// <summary>
     /// Ошибка, которую функция подняла сама (RAISE EXCEPTION, SQLSTATE P0001), — это бизнес-сообщение
-    /// для пользователя: берём hint, как это делает BanknoteOps. Всё остальное — неожиданный сбой:
+    /// для пользователя: берём hint. Всё остальное — неожиданный сбой:
     /// наружу идёт короткий текст, стек остаётся в details.
     /// </summary>
     public static (string Message, string? Details, int StatusCode) GetExceptionText(Exception ex)

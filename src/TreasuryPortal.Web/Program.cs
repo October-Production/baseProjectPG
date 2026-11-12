@@ -10,11 +10,8 @@ using TreasuryPortal.Web.Spa;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Как в BanknoteOps: Vault подмешивает значения в конфигурацию, а SettingsHolder отдаёт их
-// коду типизированными. Контроллеры получают их через ControllerCore.Settings.
-// Vault работает везде, включая отладку: на машине разработчика переменные окружения
-// дают доступ к dev-разделу, где лежат все настройки
 builder.Configuration.VaultInit();
+
 builder.Services.AddSingleton<ISettingsHolder, SettingsHolder>();
 
 // Слой данных: репозитории, системный журнал и его фоновая запись

@@ -18,8 +18,6 @@ public sealed class SettingsStore(IConfiguration configuration) : ISettingsStore
 
     public int HostNameCacheMinutes => Int("Configuration:HostNameCacheTimoutMinutes", 60);
 
-    public int WriteLockWaitSeconds => Int("Configuration:WriteLockWaitSeconds", 10);
-
     // Новая настройка интеграции добавляется одной строкой, как в BanknoteOps:
     // public string EmailServiceEndpoint => configuration["Configuration:ServiceLinks:EmailService:Endpoint"] ?? "";
     // public int MaxFileSize => Int("Configuration:MaxFileSize", 20 * 1024 * 1024);

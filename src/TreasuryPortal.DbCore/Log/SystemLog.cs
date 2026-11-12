@@ -5,30 +5,9 @@ using TreasuryPortal.DbCore.Utils;
 namespace TreasuryPortal.DbCore.Log;
 
 /// <inheritdoc cref="ISystemLog"/>
-public sealed class SystemLog(ILogSink sink, WriteLock writeLock) : ISystemLog
+public sealed class SystemLog(ILogSink sink) : ISystemLog
 {
-    public LogOperation Start(IUserCredential user, string entity, string operation, object? request = null) =>
-        Begin(user, entity, operation, request, lockAcquired: false, useWriteLock: false);
-
-    public async ValueTask<LogOperation> StartWriteAsync(
-        IUserCredential user,
-        string entity,
-        string operation,
-        object? request = null,
-        CancellationToken cancellationToken = default)
-    {
-        // Ожидание здесь — только семафор в памяти; в базу по-прежнему никто не ходит
-        var acquired = await writeLock.AcquireAsync(cancellationToken);
-        return Begin(user, entity, operation, request, acquired, useWriteLock: true);
-    }
-
-    private LogOperation Begin(
-        IUserCredential user,
-        string entity,
-        string operation,
-        object? request,
-        bool lockAcquired,
-        bool useWriteLock)
+    public LogOperation Start(IUserCredential user, string entity, string operation, object? request = null)
     {
         var id = Guid.NewGuid();
         var login = user?.Name ?? "";
@@ -44,7 +23,7 @@ public sealed class SystemLog(ILogSink sink, WriteLock writeLock) : ISystemLog
             Json = json,
         });
 
-        return new LogOperation(sink, id, entity, operation, login, json, useWriteLock ? writeLock : null, lockAcquired);
+        return new LogOperation(sink, id, entity, operation, login, json);
     }
 
     /// <summary>
