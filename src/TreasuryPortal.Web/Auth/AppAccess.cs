@@ -65,7 +65,10 @@ public static class AppPolicies
     /// Политика «нужно это право». Регистрировать её заранее не нужно: её собирает
     /// <see cref="PermissionPolicyProvider"/> при первом обращении.
     ///
-    /// Применение: .RequireAuthorization(AppPolicies.Permission(AppPermissions.DictionaryRead))
+    /// В контроллерах имя политики подставляет <see cref="AuthorizePermAttribute"/>:
+    /// [AuthorizePerm(AppPermissions.DictionaryRead)]. Напрямую метод нужен там, где атрибут
+    /// не поставить: .RequireAuthorization(AppPolicies.Permission(...)) у хаба или
+    /// минимального эндпоинта.
     /// </summary>
     public static string Permission(string permission) => PermissionPrefix + permission;
 }

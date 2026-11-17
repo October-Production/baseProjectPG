@@ -96,13 +96,17 @@ TreasuryPortal/
    что в BanknoteOps и NBC, и его можно выставить в Vault).
 3. Проверка права на эндпоинте (`PermissionAuthorizationHandler`) в базу не ходит вообще.
 
-**Как закрыть эндпоинт правом:**
+**Как закрыть контроллер или действие правом:**
 
 ```csharp
-group.RequireAuthorization(AppPolicies.Permission(AppPermissions.DictionaryRead));
+[Route("api/dictionaries")]
+[AuthorizePerm(AppPermissions.DictionaryRead)]
+public sealed class DictionaryController(...) : ControllerCore(...)
 ```
 
-Политику регистрировать не нужно: `PermissionPolicyProvider` собирает её при первом обращении.
+Атрибут на контроллере закрывает все его действия; его можно поставить и на отдельное
+действие. Если он стоит и там, и там, пользователю нужны оба права. Политику регистрировать
+не нужно: `PermissionPolicyProvider` собирает её при первом обращении.
 
 **Где заводится новое право:** константа в `Web/Auth/AppAccess.cs` → в список `AppPermissions.All`
 → такая же константа в `Client/src/app/core/auth/access.model.ts`. Имя должно совпадать с тем,

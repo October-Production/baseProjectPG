@@ -33,7 +33,7 @@ public sealed class PermissionAuthorizationHandler : AuthorizationHandler<Permis
 /// <summary>
 /// Собирает политику «нужно право X» при первом обращении к ней, поэтому новое право не нужно
 /// регистрировать в Program.cs — достаточно константы в <see cref="AppPermissions"/> и
-/// .RequireAuthorization(AppPolicies.Permission(...)) на эндпоинте.
+/// атрибута <see cref="AuthorizePermAttribute"/> на контроллере или действии.
 /// </summary>
 public sealed class PermissionPolicyProvider(IOptions<AuthorizationOptions> options)
     : DefaultAuthorizationPolicyProvider(options)
