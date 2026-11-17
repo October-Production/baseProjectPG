@@ -10,6 +10,9 @@ public sealed class DbCoreOptions
 
     /// <summary>Системный журнал: очередь и фоновая запись.</summary>
     public LogOptions Log { get; set; } = new();
+
+    /// <summary>События из базы (pg_notify): какой канал слушать.</summary>
+    public EventsOptions Events { get; set; } = new();
 }
 
 public sealed class ConnectionStringsOptions
@@ -27,4 +30,13 @@ public sealed class LogOptions
 
     /// <summary>Сколько секунд ждать дозапись очереди при остановке приложения.</summary>
     public int ShutdownDrainSeconds { get; set; } = 5;
+}
+
+public sealed class EventsOptions
+{
+    /// <summary>
+    /// Канал LISTEN/NOTIFY — та же строка, которую функции базы передают в pg_notify, с учётом
+    /// регистра. Пусто — события базы не слушаются. Новое значение подхватывается на ходу.
+    /// </summary>
+    public string Channel { get; set; } = "tp_events";
 }

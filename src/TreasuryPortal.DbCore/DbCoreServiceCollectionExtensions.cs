@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using TreasuryPortal.DbCore.Events;
 using TreasuryPortal.DbCore.Log;
 using TreasuryPortal.DbCore.Log.Abstract;
 using TreasuryPortal.DbCore.Repositories;
@@ -15,7 +16,7 @@ public static class DbCoreServiceCollectionExtensions
 {
     /// <summary>
     /// Весь слой данных одной строкой: настройки, подключение к PostgreSQL, системный журнал
-    /// вместе с его фоновой записью и единая точка входа в репозитории.
+    /// вместе с его фоновой записью, прослушивание событий базы и единая точка входа в репозитории.
     /// </summary>
     public static IServiceCollection AddDbCore(this IServiceCollection services, IConfiguration configuration)
     {
@@ -30,6 +31,10 @@ public static class DbCoreServiceCollectionExtensions
         services.TryAddSingleton<ILogRepository, LogRepository>();
         services.TryAddSingleton<ISystemLog, SystemLog>();
         services.AddHostedService<SystemLogWriter>();
+
+        // События из базы (pg_notify): служба слушает канал, только если в DI есть получатель
+        // IDbEventHandler — его регистрирует тот, кому события нужны
+        services.AddHostedService<DbEventListener>();
 
         // Репозитории
         services.TryAddSingleton<ITreasuryUow, TreasuryUow>();
