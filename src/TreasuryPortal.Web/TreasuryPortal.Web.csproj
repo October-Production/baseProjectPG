@@ -36,6 +36,8 @@
   <ItemGroup>
     <!-- Dev-настройки на сервер не уезжают: в них лежит подмена ролей и прав (Auth:Dev) -->
     <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+    <!-- Образец того, что заводится в Vault: только для чтения людьми, ни в сборку, ни на сервер не попадает -->
+    <Content Update="appsettings.Vault.example.json" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
   <!-- Первая Debug-сборка: ставим npm-зависимости клиента, чтобы ng serve поднялся с первого F5 -->

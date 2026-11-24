@@ -486,6 +486,23 @@ BanknoteOps и NBC вместе с написанием «Timout» — если 
 | `Configuration:Events:Channel` | канал `pg_notify`, который слушает портал; пусто — не слушать | на ходу |
 | `Configuration:ServiceLinks:<Сервис>:*` | адрес, вход и тайм-аут внешнего сервиса (раздел 5) | на ходу |
 
+**Образец для Vault** — `Web/appsettings.Vault.example.json`: все эти ключи одним JSON, без
+комментариев, чтобы его можно было вставить в Vault как есть. Значения в угловых скобках
+обязательны, без них портал не работает:
+
+* `Configuration:ConnectionStrings:PGSQLServer`;
+* `Configuration:ServiceLinks:B2Service:Endpoint`, `User`, `PWD` — для поиска угод в B2.
+
+Остальное там записано со значениями по умолчанию. Эти ключи можно не заводить — тогда действует
+`appsettings.json`, — или завести, чтобы менять их в Vault без выпуска. `Actions:getDeals4Treasury`
+поменяйте, если в kaznacms в `DealSearchMethod` стояло другое значение.
+
+`VaultInit` понимает точку как разделитель (`additionalCharactersForConfigurationPath`), поэтому
+те же ключи можно завести и плоско: `Configuration.ServiceLinks.B2Service.Endpoint`.
+
+Сам образец ни в сборку, ни на сервер не попадает (`CopyToOutputDirectory` и
+`CopyToPublishDirectory` — `Never`).
+
 Секция `Auth` в `appsettings.json` больше не нужна: в ней осталась только отладочная подмена
 прав `Auth:Dev`, а она живёт в `appsettings.Development.json`.
 
