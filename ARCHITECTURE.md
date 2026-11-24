@@ -15,11 +15,12 @@ PostgreSQL, системный журнал пишется в фоне. Бизн
 
 ```
 TreasuryPortal/
-  src/TreasuryPortal.Web/      ASP.NET Core: API, аутентификация, права, хостинг SPA
-  src/TreasuryPortal.DbCore/   Всё, что связано с базой: репозитории, UOW, системный журнал, события базы
-  src/TreasuryPortal.Client/   Angular 22 (zoneless, signals, Angular Material)
-  deploy/                      Скрипт создания сайта IIS с Windows-аутентификацией
-  db/                          Что должно быть в базе, чтобы портал заработал
+  src/TreasuryPortal.Web/            ASP.NET Core: API, аутентификация, права, хостинг SPA
+  src/TreasuryPortal.DbCore/         Всё, что связано с базой: репозитории, UOW, системный журнал, события базы
+  src/TreasuryPortal.Integrations/   Внешние сервисы: клиенты SOAP и REST и сами сервисы
+  src/TreasuryPortal.Client/         Angular 22 (zoneless, signals, Angular Material)
+  deploy/                            Скрипт создания сайта IIS с Windows-аутентификацией
+  db/                                Что должно быть в базе, чтобы портал заработал
 ```
 
 **Зачем в зависимостях `Microsoft.AspNetCore.SpaServices.Extensions`.** Пакет работает только
@@ -46,11 +47,13 @@ TreasuryPortal/
 значение `json`. Поэтому в слое данных нет ни XML, ни сборки документа из нескольких наборов
 строк — ответ функции уходит клиенту почти как есть.
 
-Почему три проекта, а не два, как раньше (Web + Client):
+Почему четыре проекта, а не два, как раньше (Web + Client):
 
 * **DbCore** — библиотека без зависимости от ASP.NET. Там живут строка подключения, вызовы
   хранимых процедур, разбор их ответов и журнал. Web о базе не знает ничего, кроме интерфейса
   `ITreasuryUow`. Это же позволяет позже переиспользовать слой в консольной задаче или сервисе.
+* **Integrations** — обращения к другим системам по SOAP и REST. Тоже без ASP.NET: тот же
+  сервис можно позвать из фоновой задачи. От DbCore берёт только пользователя и системный журнал.
 * **Web** — только HTTP: кто вошёл, что ему можно, какой эндпоинт что отдаёт.
 * **Client** — Angular, собирается в `wwwroot` при `dotnet publish`.
 
@@ -275,7 +278,150 @@ this.realtime.onEntity('limit')
 (`ConfigureHttpJsonOptions`), и в протоколе хаба (`AddJsonProtocol`). Иначе TypeScript пришлось
 бы сопоставлять числа руками.
 
-## 5. Настройки и секреты
+## 5. Внешние сервисы: SOAP и REST
+
+Обращения к другим системам банка и внешним API живут в отдельном проекте
+`TreasuryPortal.Integrations`. Механика та же, что в kaznacms (`SOAPRunner` и `RestRunner`),
+но SOAP-операция описывается не XML вручную, а классами запроса и ответа. Вызов встроен так
+же, как вызов функции базы: пользователь, журнал и ошибки — по тем же правилам.
+
+```
+контроллер ──► IB2Service ──► SoapClient / RestClient ──► внешний сервис
+                   │                     │
+          контракт операции:      конверт, вход, тайм-аут, журнал, настройки
+          запрос → ответ          из Vault на момент вызова, сбой → 502/504
+```
+
+| Файл | Зачем |
+|---|---|
+| `Soap/SoapClient.cs` | SOAP 1.1 или 1.2: конверт, WS-Security или Basic, разбор Fault |
+| `Soap/ISoapRequest.cs`, `Soap/SoapActionAttribute.cs` | контракт операции: класс запроса знает свой ответ и SOAPAction |
+| `Soap/SoapSerializer.cs` | классы контракта ↔ XML через `XmlSerializer` |
+| `Rest/RestClient.cs` | REST с JSON: `GetAsync`, `PostAsync`, `SendAsync` |
+| `ExternalCaller.cs` | общее для обоих: адрес и вход из настроек, тайм-аут, журнал, перевод сбоев |
+| `ExternalServiceOptions.cs` | настройки одного сервиса — раздел `Configuration:ServiceLinks:<Сервис>` |
+| `ExternalServiceException.cs` | сбой внешнего сервиса: текст для пользователя и код ответа |
+| `IntegrationsServiceCollectionExtensions.cs` | `AddIntegrations()`, `AddSoapService`, `AddRestService` |
+| `Services/B2/` | образец: поиск угод в B2 по SOAP, перенесён из kaznacms |
+
+**Контракт SOAP-операции.** Операция описывается двумя классами в `Services/<Сервис>/Contracts/`,
+по файлу на операцию. Класс запроса реализует `ISoapRequest<Ответ>`, поэтому вызов сам знает тип
+ответа:
+
+```csharp
+[XmlRoot("getDeals4Treasury", Namespace = B2Xml.Namespace)]
+[SoapAction("getDeals4Treasury")]
+public sealed class GetDeals4TreasuryRequest : ISoapRequest<GetDeals4TreasuryResponse>
+{
+    [XmlElement("accountNo")] public string AccountNo { get; set; } = "";
+    [XmlElement("currencyId")] public string CurrencyId { get; set; } = "";
+}
+
+[XmlRoot("getDeals4TreasuryResponse", Namespace = B2Xml.Namespace)]
+public sealed class GetDeals4TreasuryResponse
+{
+    [XmlElement("Deals4TreasuryItem")] public List<Deals4TreasuryItem> Items { get; set; } = [];
+}
+
+// в сервисе
+var response = await soap.CallAsync(user, new GetDeals4TreasuryRequest { AccountNo = …, CurrencyId = … }, ct);
+```
+
+Конверт, WS-Security, разбор ответа и Fault одинаковы для всех операций всех сервисов, у операции
+остаются только её поля. Что важно знать:
+
+* Классы контракта — публичные, с конструктором без параметров и свойствами `get; set;`: так
+  требует `XmlSerializer`. Их можно написать руками или сгенерировать из WSDL
+  (`dotnet-svcutil --serializer XmlSerializer`) или XSD (`xsd.exe`).
+* Пространство имён задавайте явно: у корня — в `[XmlRoot]`, у вложенных классов — в `[XmlType]`.
+  Если сервис ждёт поля без пространства имён (`elementFormDefault="unqualified"` в WSDL),
+  укажите у них `Form = XmlSchemaForm.Unqualified`.
+* Лишние элементы в ответе пропускаются: новое поле на стороне сервиса ничего не сломает. Ответ
+  с другим корневым элементом даёт 502, а в логе — что пришло и во что не разобралось.
+* Даты и суммы, которые сервис присылает не в формате XSD, держите строками и разбирайте в сервисе.
+* SOAPAction берётся из атрибута, настройка `Actions:<операция>` его перекрывает: если шина ждёт
+  другое значение, код менять не нужно.
+* В журнал запрос попадает как JSON: `{"accountNo":"…","currencyId":"…"}`.
+* Модель портала (`B2Deal`) отделена от контракта, поэтому переименование поля в B2 не дойдёт
+  до клиента. Если поля контракта и так подходят экрану, класс ответа можно отдать как есть.
+
+Операцию, которую неудобно описать классами, можно вызвать с `XElement`:
+`soap.CallAsync(user, action, requestElement, response => …, ct)`.
+
+**Настройки сервиса** лежат в разделе `Configuration:ServiceLinks:<Сервис>`. Ключи `Endpoint`,
+`User` и `PWD` названы так же, как в kaznacms, поэтому значения из Vault переносятся без
+переименования.
+
+| Ключ | Что задаёт | По умолчанию |
+|---|---|---|
+| `Endpoint` | для SOAP — адрес вызова, для REST — база путей | нет; без него сервис отвечает 503 |
+| `User`, `PWD` | логин и пароль | нет |
+| `Token` | токен для Bearer | нет |
+| `Auth` | `None`, `Basic`, `WsSecurity`, `Bearer` или `Windows` | есть логин — `WsSecurity` для SOAP и `Basic` для REST |
+| `TimeoutSeconds` | сколько ждать ответа | 15 |
+| `SoapVersion` | `Soap11` или `Soap12` | `Soap11` |
+| `Actions:<операция>` | SOAPAction операции, если шина ждёт не то, что записано в контракте | из `[SoapAction]` |
+| `UseProxy` | ходить через системный прокси | нет |
+| `Title` | имя сервиса в сообщении пользователю | имя раздела |
+
+Настройки читаются на каждом вызове, поэтому новый адрес или пароль из Vault действует сразу.
+`UseProxy` и `Auth = Windows` задают само соединение и подхватываются в течение двух минут:
+столько живёт обработчик соединений в фабрике `HttpClient`.
+
+**Что видит пользователь.** Любой сбой превращается в `ExternalServiceException`, и
+`ApiExceptionHandler` отвечает его кодом и текстом:
+
+| Что случилось | Ответ портала |
+|---|---|
+| не задан или неправильный `Endpoint` | 503 «Не налаштовано адресу сервісу …» |
+| сервис не ответил за `TimeoutSeconds` | 504 «Сервіс … не відповів за N с» |
+| нет соединения, ошибка TLS | 502 «Сервіс … недоступний» |
+| SOAP Fault | 502 «Сервіс … повернув помилку: » и текст `faultstring` |
+| код ошибки, HTML вместо SOAP или JSON, ответ не того вида | 502 |
+| REST ответил 404 | 404 «Сервіс …: запис не знайдено» |
+
+Подробности — код ответа, Fault целиком, начало тела ответа — уходят в лог сервера
+(`TreasuryPortal.Integrations.Soap.<Сервис>` или `.Rest.<Сервис>`) и в системный журнал, но не
+на экран. Каждый вызов пишется в журнал операцией: сущность — имя сервиса, операция — имя
+SOAP-операции или «метод путь» для REST.
+
+Повторов при сбое нет намеренно: запись, повторённая после тайм-аута, может выполниться
+дважды. Если сервису только читать, повтор добавляется в `AddExternalService` пакетом
+`Microsoft.Extensions.Http.Resilience`.
+
+**Что сделано иначе, чем в kaznacms:**
+
+* `HttpClient` берётся из фабрики по имени сервиса. В kaznacms SOAP держал статический клиент,
+  а REST создавал новый на каждый вызов — под нагрузкой так кончаются сокеты.
+* Сертификат сервера проверяется. kaznacms принимал любой, а это позволяет кому угодно в сети
+  выдать себя за сервис. Если сертификат выдан внутренним УЦ банка, этот УЦ должен быть
+  в доверенных на сервере портала.
+* Ошибка не собирается вручную в JSON с полем `error`: исключение само доходит до клиента
+  ответом 502 или 504.
+* Вызов пишется в системный журнал, как и вызов функции базы.
+
+**Как добавить внешний сервис:**
+
+1. `Services/<Сервис>/Contracts/` — по файлу на операцию: классы запроса и ответа.
+2. `Services/<Сервис>/Abstract/I<Сервис>Service.cs` — интерфейс: например, список и карточка.
+3. `Services/<Сервис>/<Сервис>Service.cs` — получает в конструктор `SoapClient` (или `RestClient`),
+   заполняет контракт и переводит ответ в модель портала. Образец — `Services/B2/B2Service.cs`.
+4. `AddIntegrations` — одна строка:
+   `services.AddSoapService<I<Сервис>Service, <Сервис>Service>(configuration, "<Раздел>")`,
+   для REST — `AddRestService`. Клиент в конструкторе уже привязан к своему разделу настроек,
+   а сервис не знает ни имени раздела, ни адреса.
+5. Vault: `Configuration:ServiceLinks:<Раздел>:Endpoint`, `User`, `PWD`.
+6. Web: контроллер, закрытый правом, — как `Controllers/B2Controller.cs`.
+
+Новая операция уже подключённого сервиса — только шаги 1 и 3: контракт и метод.
+
+```csharp
+// Карточка из REST-сервиса: значение из пользовательского ввода — только через EscapeDataString
+public Task<Deal?> GetDealAsync(IUserCredential user, string id, CancellationToken cancellationToken) =>
+    _rest.GetAsync<Deal>(user, $"deals/{Uri.EscapeDataString(id)}", cancellationToken);
+```
+
+## 6. Настройки и секреты
 
 Строки подключения в репозитории нет. На сервере секреты приходят из Vault
 (`Web/Configuration/VaultExtension.cs`, пакет `Util.VaultCoreLib`), учётка для входа в Vault —
@@ -335,6 +481,7 @@ BanknoteOps и NBC вместе с написанием «Timout» — если 
 | `Configuration:HostNameCacheTimoutMinutes` | сколько минут кэшировать имя машины клиента | на ходу |
 | `Configuration:Log:*` | очередь системного журнала | при старте |
 | `Configuration:Events:Channel` | канал `pg_notify`, который слушает портал; пусто — не слушать | на ходу |
+| `Configuration:ServiceLinks:<Сервис>:*` | адрес, вход и тайм-аут внешнего сервиса (раздел 5) | на ходу |
 
 Секция `Auth` в `appsettings.json` больше не нужна: в ней осталась только отладочная подмена
 прав `Auth:Dev`, а она живёт в `appsettings.Development.json`.
@@ -353,7 +500,7 @@ BanknoteOps и NBC вместе с написанием «Timout» — если 
 
 ---
 
-## 6. Структура Angular-проекта
+## 7. Структура Angular-проекта
 
 Папки разложены с расчётом на большой портал: добавление раздела не должно требовать правок
 в чужих папках.
@@ -434,7 +581,7 @@ src/
 
 ---
 
-## 7. Тема для казначеев
+## 8. Тема для казначеев
 
 `styles/theme.scss`. Палитра сгенерирована схематикой Angular Material из точного фирменного
 синего Sense Bank **#2722FF** (цвет логотипа) плюс поддерживающий серо-синий, зелёный для «в плюс»
@@ -464,7 +611,7 @@ ng generate @angular/material:theme-color --primary-color="#2722FF" --secondary-
 
 ---
 
-## 8. Как добавить сущность
+## 9. Как добавить сущность
 
 Пример для сущности «Платіжне доручення». Образец, с которого удобно копировать, — справочники:
 `DictionaryRepository` на сервере и раздел `features/dictionaries` на клиенте.
@@ -508,9 +655,13 @@ await notify.ToRoleAsync(AppRoles.Reader,
 а на экране списка — подписку `realtime.onEntity('payment_order')`, которая перечитывает данные.
 Имя сущности одно и то же в журнале, в сообщении и в подписке.
 
+**Если данные приходят из другой системы**, а не из базы, шаги DbCore заменяет сервис
+в `TreasuryPortal.Integrations` (раздел 5), а контроллер зовёт его вместо `Uow` — как
+`B2Controller`.
+
 ---
 
-## 9. Что работает только при отладке
+## 10. Что работает только при отладке
 
 Всё, чего нет на сервере, помечено в коде одной фразой — её достаточно найти поиском:
 
@@ -530,7 +681,7 @@ await notify.ToRoleAsync(AppRoles.Reader,
 Признак `devAccess` в ответе `api/auth/me` и метка `DEV` в шапке — не код отладки, а индикатор:
 он загорается, когда роли подменены секцией `Auth:Dev`, и на сервере остаётся выключенным.
 
-## 10. Что ещё предстоит сделать
+## 11. Что ещё предстоит сделать
 
 Каркас намеренно не угадывает за вас:
 
@@ -540,6 +691,10 @@ await notify.ToRoleAsync(AppRoles.Reader,
 * **Уведомления из базы.** Функции, после которых кого-то нужно позвать (переход заявки по флоу,
   конец импорта), вызывают `pg_notify` в канал портала — формат в `db/README.md`, раздел 7.
 * **Строка подключения в Vault** по пути `MountPath` из `appsettings.json`.
+* **Внешние сервисы в Vault.** Для B2 — `Configuration:ServiceLinks:B2Service:Endpoint`, `User`
+  и `PWD`, те же значения, что у kaznacms. Значение `DealSearchMethod` из kaznacms — в
+  `Actions:getDeals4Treasury`, если оно отличается от `getDeals4Treasury`. Право `TPDealRead` —
+  в таблицу веб-прав.
 * **Список справочников** на экране «Довідники» пока зашит в компоненте: как появится процедура
   «перечислить справочники», он придёт с сервера.
 * **Таблица веб-прав** портала: имена из `AppPermissions.All` должны быть заведены в базе,

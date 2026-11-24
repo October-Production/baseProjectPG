@@ -19,6 +19,7 @@ export type AppRole = (typeof AppRoles)[keyof typeof AppRoles];
 export const AppPermissions = {
   DictionaryRead: 'TPDictionaryRead',
   AuditRead: 'TPAuditRead',
+  DealRead: 'TPDealRead',
 
   // Пример для сущности:
   // PaymentOrderRead: 'TPPaymentOrderRead',

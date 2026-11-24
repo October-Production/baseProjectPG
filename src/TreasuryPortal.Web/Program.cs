@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using TreasuryPortal.DbCore;
+using TreasuryPortal.Integrations;
 using TreasuryPortal.Web.Auth;
 using TreasuryPortal.Web.Configuration;
 using TreasuryPortal.Web.Configuration.Abstract;
@@ -16,6 +17,9 @@ builder.Services.AddSingleton<ISettingsHolder, SettingsHolder>();
 
 // Слой данных: репозитории, системный журнал и его фоновая запись
 builder.Services.AddDbCore(builder.Configuration);
+
+// Внешние сервисы (SOAP и REST): клиенты и сами сервисы. Журнал они берут у слоя данных
+builder.Services.AddIntegrations(builder.Configuration);
 
 // Доменная аутентификация, веб-роли и права из базы
 builder.Services.AddTreasuryAuthentication(builder.Configuration);

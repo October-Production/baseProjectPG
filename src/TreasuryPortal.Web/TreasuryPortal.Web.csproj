@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TreasuryPortal.DbCore\TreasuryPortal.DbCore.csproj" />
+    <ProjectReference Include="..\TreasuryPortal.Integrations\TreasuryPortal.Integrations.csproj" />
     <!--
       Ссылка на клиент нужна Visual Studio: без неё обозреватель решений не связывает проекты,
       а профиль запуска не поднимает клиент. Выхода сборки у esproj нет (ReferenceOutputAssembly),

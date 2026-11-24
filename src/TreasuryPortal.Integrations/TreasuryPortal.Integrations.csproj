@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>TreasuryPortal.Integrations</RootNamespace>
+    <AssemblyName>TreasuryPortal.Integrations</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- IHttpClientFactory: свой пул соединений на каждый внешний сервис вместо new HttpClient на вызов -->
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Пользователь запроса и системный журнал: вызов внешнего сервиса пишется туда же, что и вызов базы -->
+    <ProjectReference Include="..\TreasuryPortal.DbCore\TreasuryPortal.DbCore.csproj" />
+  </ItemGroup>
+
+</Project>

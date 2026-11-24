@@ -8,11 +8,12 @@
 поверх. Как он устроен и куда что класть — **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 
 ```
-src/TreasuryPortal.Web/      API, аутентификация, права, хаб SignalR, хостинг SPA
-src/TreasuryPortal.DbCore/   репозитории, UOW, системный журнал (PostgreSQL)
-src/TreasuryPortal.Client/   Angular 22 + Angular Material (тема Sense Bank)
-deploy/                      создание сайта IIS с Windows-аутентификацией
-db/                          что должно быть в базе
+src/TreasuryPortal.Web/            API, аутентификация, права, хаб SignalR, хостинг SPA
+src/TreasuryPortal.DbCore/         репозитории, UOW, системный журнал (PostgreSQL)
+src/TreasuryPortal.Integrations/   внешние сервисы: клиенты SOAP и REST
+src/TreasuryPortal.Client/         Angular 22 + Angular Material (тема Sense Bank)
+deploy/                            создание сайта IIS с Windows-аутентификацией
+db/                                что должно быть в базе
 ```
 
 ## Запуск локально

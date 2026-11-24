@@ -35,6 +35,9 @@ public static class AppPermissions
     /// <summary>Просмотр журнала операций портала.</summary>
     public const string AuditRead = "TPAuditRead";
 
+    /// <summary>Поиск угод в B2 — образец права на данные внешнего сервиса.</summary>
+    public const string DealRead = "TPDealRead";
+
     // Пример для сущности: добавляя её, заводите пару Read/Write и вписывайте в All.
     // public const string PaymentOrderRead = "TPPaymentOrderRead";
     // public const string PaymentOrderWrite = "TPPaymentOrderWrite";
@@ -44,6 +47,7 @@ public static class AppPermissions
     [
         DictionaryRead,
         AuditRead,
+        DealRead,
     ];
 }
 
