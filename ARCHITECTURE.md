@@ -415,6 +415,9 @@ SOAP-операции или «метод путь» для REST.
 
 Новая операция уже подключённого сервиса — только шаги 1 и 3: контракт и метод.
 
+Пошаговый пример с кодом — новый сервис со списком и карточкой, новый метод в B2 и то же для
+REST — в [`src/TreasuryPortal.Integrations/README.md`](src/TreasuryPortal.Integrations/README.md).
+
 ```csharp
 // Карточка из REST-сервиса: значение из пользовательского ввода — только через EscapeDataString
 public Task<Deal?> GetDealAsync(IUserCredential user, string id, CancellationToken cancellationToken) =>
